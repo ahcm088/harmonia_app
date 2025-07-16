@@ -1,0 +1,58 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python egg metadata
+*.egg-info/
+.eggs/
+
+# Distribution / packaging
+build/
+dist/
+*.egg
+*.whl
+
+# PyInstaller
+*.manifest
+*.spec
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Kivy logs
+.kivy/logs/
+
+# macOS files
+.DS_Store
+
+# Windows thumbnail cache files
+Thumbs.db
+
+# Environment variables file
+.env
+
+# Python test cache
+.pytest_cache/
+
+# mypy cache
+.mypy_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Misc
+*.log
