@@ -1,35 +1,91 @@
-# Harmonia App
+# Editor de Cifras 🎶
 
-Editor de cifras e análise harmônica para músicos, construído em Python com Kivy.
+Uma aplicação Kivy para editar cifras musicais com marcação de acordes, metadados harmônicos e comentários personalizados.
 
-## Funcionalidades
+## ✨ Funcionalidades
 
-- Inserção de acordes diretamente na letra da música usando formato `[Am]`
-- Metadados para cada ocorrência de acorde, como grau harmônico e comentários
-- Visualização da cifra com acordes coloridos (vermelho = sem metadados; azul = com metadados)
-- Edição e atualização dinâmica dos metadados por ocorrência do acorde
-- Interface amigável para computador e potencial para dispositivos móveis
+- Inserção de acordes diretamente no texto usando a sintaxe `[Acorde]`
+- Validação do formato do acorde ao inserir
+- Visualização de acordes com e sem metadados coloridos (azul/vermelho)
+- Adição de grau harmônico e comentários a cada acorde
+- Lista lateral com todos os acordes e suas posições (linha/ordem)
+- Edição completa do texto da cifra com atualização automática dos acordes
+- Salvamento e carregamento de projetos `.harmonia.json`
 
-## Como usar
+## 🖼️ Interface
 
-1. Digite ou cole a letra da música no campo à esquerda.
-2. Posicione o cursor na palavra onde deseja inserir o acorde.
-3. Digite o acorde no campo "Acorde" e clique em "Inserir acorde".
-4. Se desejar, preencha os campos "Grau harmônico" e "Comentário sobre o acorde" antes de inserir, para que já sejam vinculados.
-5. Clique em uma ocorrência de acorde na lista à direita para editar seus metadados.
-6. Use os botões para atualizar ou limpar os campos de metadados.
+A interface é baseada no framework Kivy e organizada via arquivo KV (`ui.kv`), com os seguintes elementos:
 
-## Requisitos
+- Campo de entrada para o texto da cifra
+- Campos para adicionar acorde, grau e comentário
+- Lista de acordes detectados com destaque visual
+- Visualização formatada e colorida da cifra
+- Painel de metadados
+- Botões de salvar e carregar projeto
 
-- Python 3.8 ou superior
-- Kivy 2.3.1
+## 🛠️ Instalação
 
-## Instalação
+### Requisitos
+
+- Python 3.7+
+- Kivy 2.0+
+
+### Instalação com `pip`
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-# ou
-.venv\Scripts\activate     # Windows
-
 pip install kivy
+```
+
+## ▶️ Como executar
+
+1. Clone este repositório ou baixe os arquivos `main.py` e `ui.kv`.
+2. Execute o aplicativo:
+
+```bash
+python main.py
+```
+
+> Certifique-se de que `main.py` e `ui.kv` estão na mesma pasta.
+
+## 💾 Formato de Projeto
+
+Ao salvar um projeto, será criado um arquivo `.harmonia.json` contendo:
+
+```json
+{
+  "title": "Título do projeto",
+  "key": "Tom da música",
+  "description": "Descrição",
+  "lyrics_text": "Texto com acordes",
+  "chord_metadata": {
+    "pos_42": {
+      "chord": "C#m",
+      "degree": "iii",
+      "comment": "Acorde de passagem"
+    }
+  }
+}
+```
+
+## 📁 Estrutura do Projeto
+
+```
+.
+├── main.py           # Código principal da aplicação
+├── ui.kv             # Interface gráfica em Kivy
+├── requirements.txt  # Dependências
+└── README.md         # Documentação
+```
+
+## 🧪 Validação de acordes suportados
+
+São aceitos acordes com as seguintes variações:
+
+- Notas de A a G
+- Sustenidos e bemóis (`#`, `b`)
+- Tipos como: `m`, `maj`, `dim`, `aug`, `sus`, `add`, `7`, `9`, etc.
+- Barra de baixo: `C/E`, `F#m/B`
+
+## 📄 Licença
+
+Distribuído sob a licença MIT. Veja o arquivo `LICENSE` para mais informações.

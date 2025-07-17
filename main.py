@@ -22,6 +22,8 @@ class HarmonyScreen(BoxLayout):
     selected_occurrence = StringProperty("")
     chord_metadata = DictProperty({})
     project_title = StringProperty("Sem título")
+    project_key = StringProperty("")
+    project_description = StringProperty("")
     chord_positions = ListProperty([])
     chord_counter_map = DictProperty({})
     selected_button = ObjectProperty(None, allownone=True)
@@ -427,6 +429,8 @@ class HarmonyScreen(BoxLayout):
     def save_project(self):
         data = {
             "title": self.ids.project_title_input.text.strip() or "Sem título",
+            "key": self.ids.project_key_input.text.strip(),
+            "description": self.ids.project_description_input.text.strip(),
             "lyrics_text": self.ids.lyrics_input.text,
             "chord_metadata": self.chord_metadata
         }
@@ -453,6 +457,8 @@ class HarmonyScreen(BoxLayout):
                     data = json.load(f)
                 
                 self.ids.project_title_input.text = data.get("title", "Sem título")
+                self.ids.project_key_input.text = data.get("key", "")
+                self.ids.project_description_input.text = data.get("description", "")
                 self.ids.lyrics_input.text = data.get("lyrics_text", "")
                 self.chord_metadata = data.get("chord_metadata", {})
                 self.selected_button = None

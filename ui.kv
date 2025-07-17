@@ -15,52 +15,99 @@
         size_hint_x: 0.7
         spacing: 15
 
-        # Linha do título com botões
+        # Seção de metadados do projeto
         BoxLayout:
+            orientation: 'vertical'
             size_hint_y: None
-            height: 55
+            height: 120
             spacing: 10
-            
-            # Título do projeto (agora ocupa 60% da largura)
-            TextInput:
-                id: project_title_input
-                hint_text: "Título do projeto"
-                hint_text_color: 0.6, 0.6, 0.6, 1
-                font_size: 18
-                multiline: False
-                foreground_color: 0.2, 0.2, 0.2, 1
-                background_color: 1, 1, 1, 1
-                cursor_color: 0.1, 0.5, 0.8, 1
-                on_text_validate: root.ids.lyrics_input.focus = True
-            
-            # Botão Salvar (20% da largura)
-            Button:
-                text: "SALVAR"
-                size_hint_x: 0.2
-                background_normal: ''
-                background_color: 0.2, 0.7, 0.4, 1  # Verde
-                color: 1, 1, 1, 1
-                bold: True
-                font_size: '14sp'
-                on_press: root.save_project()
-            
-            # Botão Carregar (20% da largura)
-            Button:
-                text: "CARREGAR"
-                size_hint_x: 0.2
-                background_normal: ''
-                background_color: 0.4, 0.5, 0.9, 1  # Azul mais claro
-                color: 1, 1, 1, 1
-                bold: True
-                font_size: '14sp'
-                on_press: root.load_project()
+            canvas.before:
+                Color:
+                    rgba: 0.98, 0.98, 0.99, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            # Linha do título com botões
+            BoxLayout:
+                size_hint_y: None
+                height: 55
+                spacing: 10
+                
+                # Título do projeto
+                TextInput:
+                    id: project_title_input
+                    hint_text: "Título do projeto"
+                    hint_text_color: 0.6, 0.6, 0.6, 1
+                    font_size: 18
+                    multiline: False
+                    foreground_color: 0.2, 0.2, 0.2, 1
+                    background_color: 1, 1, 1, 1
+                    cursor_color: 0.1, 0.5, 0.8, 1
+                    on_text_validate: root.ids.project_key_input.focus = True
+                
+                # Coluna dos botões
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint_x: 0.3
+                    spacing: 5
+                    
+                    # Botão Salvar
+                    Button:
+                        text: "SALVAR"
+                        background_normal: ''
+                        background_color: 0.2, 0.7, 0.4, 1  # Verde
+                        color: 1, 1, 1, 1
+                        bold: True
+                        font_size: '14sp'
+                        on_press: root.save_project()
+                    
+                    # Botão Carregar
+                    Button:
+                        text: "CARREGAR"
+                        background_normal: ''
+                        background_color: 0.4, 0.5, 0.9, 1  # Azul mais claro
+                        color: 1, 1, 1, 1
+                        bold: True
+                        font_size: '14sp'
+                        on_press: root.load_project()
+
+            # Linha da tonalidade e descrição
+            BoxLayout:
+                size_hint_y: None
+                height: 45
+                spacing: 10
+                
+                TextInput:
+                    id: project_key_input
+                    hint_text: "Tonalidade (ex: C, Am, G#)"
+                    hint_text_color: 0.6, 0.6, 0.6, 1
+                    size_hint_x: 0.3
+                    multiline: False
+                    font_size: 16
+                    foreground_color: 0.2, 0.2, 0.2, 1
+                    background_color: 1, 1, 1, 1
+                    cursor_color: 0.1, 0.5, 0.8, 1
+                    on_text_validate: root.ids.project_description_input.focus = True
+
+                TextInput:
+                    id: project_description_input
+                    hint_text: "Descrição/observações sobre a música"
+                    hint_text_color: 0.6, 0.6, 0.6, 1
+                    size_hint_x: 0.7
+                    multiline: False
+                    font_size: 16
+                    foreground_color: 0.2, 0.2, 0.2, 1
+                    background_color: 1, 1, 1, 1
+                    cursor_color: 0.1, 0.5, 0.8, 1
+                    on_text_validate: root.ids.lyrics_input.focus = True
 
         # Área de edição da letra
         TextInput:
             id: lyrics_input
             hint_text: "Digite ou cole a letra com acordes no formato [Am]"
             hint_text_color: 0.6, 0.6, 0.6, 1
-            size_hint_y: 0.4
+            size_hint_y: 0.35
             multiline: True
             font_size: 16
             foreground_color: 0.2, 0.2, 0.2, 1
@@ -96,7 +143,7 @@
         # Pré-visualização HORIZONTAL (cifra + análise)
         BoxLayout:
             orientation: 'horizontal'
-            size_hint_y: 0.45
+            size_hint_y: 0.4
             spacing: 15
 
             # Cifra (esquerda)
