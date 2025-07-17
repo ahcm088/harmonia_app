@@ -37,7 +37,7 @@
                 # Título do projeto
                 TextInput:
                     id: project_title_input
-                    hint_text: "Título do projeto"
+                    hint_text: "Título da música"
                     hint_text_color: 0.6, 0.6, 0.6, 1
                     font_size: 18
                     multiline: False
@@ -56,21 +56,31 @@
                     Button:
                         text: "SALVAR"
                         background_normal: ''
-                        background_color: 0.2, 0.7, 0.4, 1  # Verde
+                        background_color: 0.2, 0.7, 0.4, 1
                         color: 1, 1, 1, 1
                         bold: True
                         font_size: '14sp'
                         on_press: root.save_project()
-                    
+
                     # Botão Carregar
                     Button:
                         text: "CARREGAR"
                         background_normal: ''
-                        background_color: 0.4, 0.5, 0.9, 1  # Azul mais claro
+                        background_color: 0.4, 0.5, 0.9, 1
                         color: 1, 1, 1, 1
                         bold: True
                         font_size: '14sp'
                         on_press: root.load_project()
+
+                    # Botão Buscar Letra
+                    Button:
+                        text: "BUSCAR LETRA"
+                        background_normal: ''
+                        background_color: 0.9, 0.6, 0.2, 1  # Laranja
+                        color: 1, 1, 1, 1
+                        bold: True
+                        font_size: '14sp'
+                        on_press: root.fetch_lyrics_from_letras()
 
             # Linha da tonalidade e descrição
             BoxLayout:
@@ -92,7 +102,7 @@
 
                 TextInput:
                     id: project_description_input
-                    hint_text: "Descrição/observações sobre a música"
+                    hint_text: "Compositor"
                     hint_text_color: 0.6, 0.6, 0.6, 1
                     size_hint_x: 0.7
                     multiline: False

@@ -10,9 +10,11 @@ from kivy.uix.button import Button
 from kivy.uix.filechooser import FileChooserIconView
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
+import requests
+from bs4 import BeautifulSoup
 
 try:
-    Builder.load_file("app/ui.kv")
+    Builder.load_file("ui.kv")
 except Exception as e:
     print(f"Erro crítico ao carregar o arquivo KV: {e}")
     traceback.print_exc()
@@ -519,6 +521,66 @@ class HarmonyScreen(BoxLayout):
                       size_hint=(0.7, 0.5))
         popup.open()
 
+    def fetch_lyrics_from_letras(self):
+        title = self.ids.project_title_input.text.strip().title()
+        artist = self.ids.project_description_input.text.strip()
+
+        if not title or not artist:
+            self.show_info_popup("Por favor, preencha o título e o compositor para buscar a letra.")
+            return
+
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0",
+                "Accept-Language": "pt-BR,pt;q=0.9"
+            }
+
+            # URL do artista (ex: https://www.letras.com/cartola/)
+            artist_slug = artist.strip().lower().replace(" ", "-")
+            artist_url = f"https://www.letras.com/{artist_slug}/"
+            response = requests.get(artist_url, headers=headers)
+
+            if response.status_code != 200:
+                self.show_info_popup("Artista não encontrado no letras.com.")
+                return
+
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # Busca pelo <a> com o title exatamente igual ao nome da música
+            link = soup.find("a", title=title)
+
+            if not link:
+                self.show_info_popup("Música não encontrada na página do artista.")
+                return
+
+            # URL completa da música
+            lyrics_url = "https://www.letras.com" + link["href"]
+            lyrics_response = requests.get(lyrics_url, headers=headers)
+
+            if lyrics_response.status_code != 200:
+                self.show_info_popup("Erro ao acessar a página da música.")
+                return
+
+            lyrics_soup = BeautifulSoup(lyrics_response.text, "html.parser")
+
+            # ⬅️ CORREÇÃO: Agora busca dentro da classe "lyric-original"
+            lyrics_div = lyrics_soup.find("div", class_="lyric-original")
+
+            if not lyrics_div:
+                self.show_info_popup("Letra não encontrada.")
+                return
+
+            # A letra está em <p> ou direto como texto
+            lyrics = lyrics_div.get_text(separator="\n", strip=True)
+
+            if lyrics.strip():
+                self.ids.lyrics_input.text = lyrics
+                self.show_info_popup("Letra carregada com sucesso!")
+            else:
+                self.show_info_popup("Letra encontrada, mas está vazia.")
+
+        except Exception as e:
+            self.show_info_popup(f"Erro inesperado:\n{str(e)}")
 
 class HarmonyApp(App):
     def build(self):
