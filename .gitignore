@@ -56,3 +56,6 @@ htmlcov/
 
 # Misc
 *.log
+
+# Directories
+outputs/
