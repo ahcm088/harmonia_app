@@ -1,0 +1,36 @@
+name: Build Kivy APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y zip unzip openjdk-11-jdk python3-pip git \
+                              libncurses5 libstdc++6 libffi-dev libssl-dev \
+                              libsqlite3-dev libbz2-dev zlib1g-dev \
+                              libncursesw5 libgdbm-dev libc6-dev \
+                              libreadline-dev liblzma-dev
+
+      - name: Install Buildozer and dependencies
+        run: |
+          pip install --upgrade pip setuptools
+          pip install buildozer cython
+
+      - name: Build the APK
+        run: buildozer android debug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: harmonauta-apk
+          path: bin/*.apk

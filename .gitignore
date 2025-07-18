@@ -21,7 +21,6 @@ dist/
 
 # PyInstaller
 *.manifest
-*.spec
 
 # IDE/editor configs
 .vscode/
