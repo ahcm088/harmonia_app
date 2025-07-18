@@ -9,11 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Passo 1: Checkout do código
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Passo 2: Instala dependências do sistema
       - name: Install system dependencies
         run: |
           sudo apt update
@@ -21,32 +19,30 @@ jobs:
                     libncurses-dev libstdc++6 libffi-dev libssl-dev \
                     libsqlite3-dev libbz2-dev zlib1g-dev
 
-      # Passo 3: Configura Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # Passo 4: Instala Buildozer e dependências
       - name: Install Buildozer
         run: |
           pip install --upgrade pip setuptools
           pip install buildozer cython virtualenv
 
-      # Passo 5: Configura ambiente Android manualmente
       - name: Setup Android SDK and NDK
         run: |
+          # Cria diretórios necessários
           mkdir -p ~/.buildozer/android/platform
           cd ~/.buildozer/android/platform
           
-          # Download e instalação do Android SDK
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
-          unzip -q commandlinetools-linux-8512546_latest.zip
+          # Baixa e instala Android Command Line Tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q commandlinetools-linux-9477386_latest.zip
           mkdir -p cmdline-tools/latest
-          mv tools/* cmdline-tools/latest/
-          rm -rf tools
+          mv cmdline-tools/* cmdline-tools/latest/
+          rm -rf cmdline-tools/NOTICE.txt cmdline-tools/LICENSE.txt
           
-          # Download e instalação do Android NDK
+          # Baixa e instala Android NDK
           wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip -q android-ndk-r25b-linux.zip
           mv android-ndk-r25b android-ndk
@@ -57,7 +53,6 @@ jobs:
           echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk" >> $GITHUB_ENV
           echo "PATH=$PATH:$HOME/.buildozer/android/platform/cmdline-tools/latest/bin" >> $GITHUB_ENV
 
-      # Passo 6: Aceita licenças do Android SDK
       - name: Accept Android SDK licenses
         run: |
           mkdir -p ~/.android
@@ -67,12 +62,14 @@ jobs:
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-license"
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
 
-      # Passo 7: Executa o build
+      - name: Install Android platforms and tools
+        run: |
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
+
       - name: Build APK
         run: |
           buildozer -v android debug
 
-      # Passo 8: Faz upload do APK gerado
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
