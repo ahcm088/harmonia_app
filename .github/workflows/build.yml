@@ -23,7 +23,8 @@ jobs:
           sudo apt update
           sudo apt install -y zip unzip openjdk-17-jdk python3-pip git \
                     libncurses-dev libstdc++6 libffi-dev libssl-dev \
-                    libsqlite3-dev libbz2-dev zlib1g-dev autoconf automake libtool pkg-config
+                    libsqlite3-dev libbz2-dev zlib1g-dev autoconf automake libtool pkg-config \
+                    build-essential libltdl-dev
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -33,7 +34,7 @@ jobs:
       - name: Install Python for Android and Buildozer
         run: |
           pip install --upgrade pip setuptools wheel
-          pip install python-for-android==2024.1.21 buildozer==1.5.0 cython==0.29.36 virtualenv
+          pip install python-for-android==2023.9.16 buildozer==1.5.0 cython==0.29.36 virtualenv
 
       - name: Setup Android environment
         run: |
@@ -76,6 +77,14 @@ jobs:
 
       - name: Build APK
         run: |
+          # Fix environment variables for autotools
+          export ACLOCAL_PATH="/usr/share/aclocal:$ACLOCAL_PATH"
+          export M4PATH="/usr/share/aclocal:$M4PATH"
+          
+          # Set additional build flags
+          export CPPFLAGS="-I/usr/include"
+          export LDFLAGS="-L/usr/lib"
+          
           buildozer -v android debug
 
       - name: Upload APK
