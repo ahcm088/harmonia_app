@@ -18,23 +18,33 @@ presplash.filename = assets/harmonauta_splash.png
 android.presplash_color = #FFFFFF
 android.add_resource = assets
 
-# FIX para evitar erro build-tools license
+# Configurações do Android
 android.build_tools_version = 30.0.3
+android.accept_sdk_license = True
 
-# Configurações adicionais recomendadas
-android.arch = arm64-v8a
-android.sdk = 24
-android.ndk = 25b
+# Atualize para usar android.archs em vez de android.arch (mais moderno)
+android.archs = arm64-v8a, armeabi-v7a
 android.api = 30
 android.minapi = 21
+android.sdk = 24  # Pode ser removido, é depreciado
+android.ndk = 25b # Pode ser removido, é depreciado
+
+# Configurações do Gradle
 android.gradle_dependencies = 'com.android.tools.build:gradle:7.2.2'
 
-# Otimização para reduzir tamanho do APK
+# Otimizações
 android.enable_shrink = True
 android.enable_proguard = True
+android.allow_backup = False
+android.uses_clear_text_traffic = False
+
+# Não é necessário especificar paths vazios (remova estas linhas)
+# android.sdk_path = 
+# android.ndk_path = 
+# android.sdk_dir = 
+# android.ndk_dir = 
 
 [buildozer]
-# Configurações de build
 log_level = 2
 warn_on_root = 1
 target = android

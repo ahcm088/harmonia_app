@@ -9,56 +9,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Passo 1: Checkout do código
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # Passo 2: Instala dependências do sistema
       - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y zip unzip openjdk-17-jdk python3-pip git \
                     libncurses-dev libstdc++6 libffi-dev libssl-dev \
-                    libsqlite3-dev libbz2-dev zlib1g-dev \
-                    libgdbm-dev libc6-dev \
-                    libreadline-dev liblzma-dev
+                    libsqlite3-dev libbz2-dev zlib1g-dev
 
+      # Passo 3: Configura Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Install Buildozer and dependencies
+      # Passo 4: Instala Buildozer e dependências
+      - name: Install Buildozer
         run: |
           pip install --upgrade pip setuptools
           pip install buildozer cython virtualenv
 
-      - name: Setup Android environment
+      ### NOVO PASSO ###
+      # Passo 5: Aceita licenças do Android SDK (SOLUÇÃO PARA SEU ERRO)
+      - name: Accept Android SDK licenses
         run: |
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
-          # Não execute buildozer init pois já temos o spec file
-
-      - name: Accept Android SDK licenses
-        run: |
-          buildozer android update  # Isso baixará as dependências necessárias
+          # Aceita todas as licenças automaticamente
           yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-          echo "$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$HOME/.buildozer/android/platform/android-sdk/platform-tools" >> $GITHUB_PATH
+          # Cria arquivo de licenças pré-aprovadas (garante que não falhe)
+          mkdir -p "$ANDROID_HOME/licenses"
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
 
-      - name: Build the APK
+      # Passo 6: Executa o build
+      - name: Build APK
         run: |
-          buildozer -v android debug 2>&1 | tee build.log
+          buildozer -v android debug
 
+      # Passo 7: Faz upload do APK gerado
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: harmonauta-apk
           path: bin/*.apk
-
-      - name: Upload build log
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build.log
