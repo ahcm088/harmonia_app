@@ -40,29 +40,30 @@ jobs:
           cd ~/.buildozer/android/platform
           
           # Download e instalação do Android SDK
-          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
-          unzip commandlinetools-linux-8512546_latest.zip
-          mv cmdline-tools latest
-          mkdir cmdline-tools
-          mv latest cmdline-tools/
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+          unzip -q commandlinetools-linux-8512546_latest.zip
+          mkdir -p cmdline-tools/latest
+          mv tools/* cmdline-tools/latest/
+          rm -rf tools
           
           # Download e instalação do Android NDK
-          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-          unzip android-ndk-r25b-linux.zip
+          wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          unzip -q android-ndk-r25b-linux.zip
           mv android-ndk-r25b android-ndk
           
           # Configura variáveis de ambiente
-          echo "ANDROID_HOME=~/.buildozer/android/platform" >> $GITHUB_ENV
-          echo "ANDROID_SDK_HOME=~/.buildozer/android/platform" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=~/.buildozer/android/platform/android-ndk" >> $GITHUB_ENV
-          echo "PATH=$PATH:~/.buildozer/android/platform/cmdline-tools/latest/bin" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$HOME/.buildozer/android/platform" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk" >> $GITHUB_ENV
+          echo "PATH=$PATH:$HOME/.buildozer/android/platform/cmdline-tools/latest/bin" >> $GITHUB_ENV
 
       # Passo 6: Aceita licenças do Android SDK
       - name: Accept Android SDK licenses
         run: |
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          mkdir -p "$ANDROID_HOME/licenses"
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-license"
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
 
