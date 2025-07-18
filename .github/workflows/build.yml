@@ -1,3 +1,4 @@
+[.github/workflows/build.yml]
 name: Build Kivy APK
 
 on:
@@ -33,25 +34,45 @@ jobs:
           pip install --upgrade pip setuptools
           pip install buildozer cython virtualenv
 
-      ### NOVO PASSO ###
-      # Passo 5: Aceita licenças do Android SDK (SOLUÇÃO PARA SEU ERRO)
+      # Passo 5: Configura ambiente Android manualmente
+      - name: Setup Android SDK and NDK
+        run: |
+          mkdir -p ~/.buildozer/android/platform
+          cd ~/.buildozer/android/platform
+          
+          # Download e instalação do Android SDK
+          wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+          unzip commandlinetools-linux-8512546_latest.zip
+          mv cmdline-tools latest
+          mkdir cmdline-tools
+          mv latest cmdline-tools/
+          
+          # Download e instalação do Android NDK
+          wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          unzip android-ndk-r25b-linux.zip
+          mv android-ndk-r25b android-ndk
+          
+          # Configura variáveis de ambiente
+          echo "ANDROID_HOME=~/.buildozer/android/platform" >> $GITHUB_ENV
+          echo "ANDROID_SDK_HOME=~/.buildozer/android/platform" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=~/.buildozer/android/platform/android-ndk" >> $GITHUB_ENV
+          echo "PATH=$PATH:~/.buildozer/android/platform/cmdline-tools/latest/bin" >> $GITHUB_ENV
+
+      # Passo 6: Aceita licenças do Android SDK
       - name: Accept Android SDK licenses
         run: |
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
-          # Aceita todas as licenças automaticamente
-          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          # Cria arquivo de licenças pré-aprovadas (garante que não falhe)
-          mkdir -p "$ANDROID_HOME/licenses"
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-license"
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
 
-      # Passo 6: Executa o build
+      # Passo 7: Executa o build
       - name: Build APK
         run: |
           buildozer -v android debug
 
-      # Passo 7: Faz upload do APK gerado
+      # Passo 8: Faz upload do APK gerado
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:

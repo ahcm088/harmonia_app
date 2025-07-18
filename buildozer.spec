@@ -22,12 +22,10 @@ android.add_resource = assets
 android.build_tools_version = 30.0.3
 android.accept_sdk_license = True
 
-# Atualize para usar android.archs em vez de android.arch (mais moderno)
+# Arquiteturas
 android.archs = arm64-v8a, armeabi-v7a
 android.api = 30
 android.minapi = 21
-android.sdk = 24  # Pode ser removido, é depreciado
-android.ndk = 25b # Pode ser removido, é depreciado
 
 # Configurações do Gradle
 android.gradle_dependencies = 'com.android.tools.build:gradle:7.2.2'
@@ -37,14 +35,3 @@ android.enable_shrink = True
 android.enable_proguard = True
 android.allow_backup = False
 android.uses_clear_text_traffic = False
-
-# Não é necessário especificar paths vazios (remova estas linhas)
-# android.sdk_path = 
-# android.ndk_path = 
-# android.sdk_dir = 
-# android.ndk_dir = 
-
-[buildozer]
-log_level = 2
-warn_on_root = 1
-target = android
