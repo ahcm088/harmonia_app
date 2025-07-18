@@ -1,165 +1,324 @@
 <HarmonyScreen>:
     orientation: 'horizontal'
-    padding: 15
-    spacing: 15
+    padding: 0
+    spacing: 0
     canvas.before:
         Color:
-            rgba: 0.95, 0.95, 0.96, 1  # Fundo cinza claro
+            rgba: 0.94, 0.96, 0.98, 1  # Fundo mais suave
         Rectangle:
             pos: self.pos
             size: self.size
 
-    # Coluna principal (70% da largura)
+    # Painel principal (70% da largura)
     BoxLayout:
         orientation: 'vertical'
         size_hint_x: 0.7
-        spacing: 15
+        spacing: 0
+        padding: 0
 
-        # Seção de metadados do projeto
+        # Header com informações do projeto
         BoxLayout:
             orientation: 'vertical'
             size_hint_y: None
-            height: 120
-            spacing: 10
+            height: 160
+            spacing: 0
+            padding: 0
             canvas.before:
                 Color:
-                    rgba: 0.98, 0.98, 0.99, 1
+                    rgba: 1, 1, 1, 1
                 Rectangle:
                     pos: self.pos
                     size: self.size
+                # Sombra sutil
+                Color:
+                    rgba: 0.85, 0.85, 0.85, 0.3
+                Rectangle:
+                    pos: self.x, self.y - 2
+                    size: self.width, 2
 
-            # Linha do título com botões
+            # Adicione o widget Image aqui, por exemplo:
+            Image:
+                source: 'assets/harmonauta_logo.png'
+                size_hint_y: None
+                height: 50
+                fit_mode: 'contain'
+                padding: 10, 0, 10, 0
+
+            # Título da seção
+            Label:
+                text: "INFORMAÇÕES DO PROJETO"
+                size_hint_y: None
+                height: 35
+                font_size: '14sp'
+                bold: True
+                color: 0.2, 0.2, 0.2, 1
+                halign: 'left'
+                padding: 15, 0
+                text_size: self.width, None
+                canvas.before:
+                    Color:
+                        rgba: 0.96, 0.97, 0.98, 1
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+
+            # Campos de entrada em grid
+            GridLayout:
+                cols: 3
+                size_hint_y: None
+                height: 70
+                padding: 15, 10, 15, 10
+                spacing: 15
+
+                # Campo Título
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: 5
+                    
+                    Label:
+                        text: "Título"
+                        size_hint_y: None
+                        height: 20
+                        font_size: '12sp'
+                        color: 0.4, 0.4, 0.4, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                    
+                    TextInput:
+                        id: project_title_input
+                        hint_text: "Digite o título da música"
+                        hint_text_color: 0.6, 0.6, 0.6, 1
+                        font_size: 14
+                        multiline: False
+                        foreground_color: 0.2, 0.2, 0.2, 1
+                        background_color: 0.98, 0.98, 0.98, 1
+                        cursor_color: 0.2, 0.5, 0.8, 1
+                        padding: 10, 8
+                        size_hint_y: None
+                        height: 35
+                        on_text_validate: root.ids.project_description_input.focus = True
+
+                # Campo Compositor
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: 5
+                    
+                    Label:
+                        text: "Compositor"
+                        size_hint_y: None
+                        height: 20
+                        font_size: '12sp'
+                        color: 0.4, 0.4, 0.4, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                    
+                    TextInput:
+                        id: project_description_input
+                        hint_text: "Nome do compositor"
+                        hint_text_color: 0.6, 0.6, 0.6, 1
+                        font_size: 14
+                        multiline: False
+                        foreground_color: 0.2, 0.2, 0.2, 1
+                        background_color: 0.98, 0.98, 0.98, 1
+                        cursor_color: 0.2, 0.5, 0.8, 1
+                        padding: 10, 8
+                        size_hint_y: None
+                        height: 35
+                        on_text_validate: root.ids.project_key_input.focus = True
+
+                # Campo Tonalidade
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: 5
+                    
+                    Label:
+                        text: "Tonalidade"
+                        size_hint_y: None
+                        height: 20
+                        font_size: '12sp'
+                        color: 0.4, 0.4, 0.4, 1
+                        halign: 'left'
+                        text_size: self.width, None
+                    
+                    TextInput:
+                        id: project_key_input
+                        hint_text: "Ex: Am, C"
+                        hint_text_color: 0.6, 0.6, 0.6, 1
+                        multiline: False
+                        font_size: 14
+                        foreground_color: 0.2, 0.2, 0.2, 1
+                        background_color: 0.98, 0.98, 0.98, 1
+                        cursor_color: 0.2, 0.5, 0.8, 1
+                        padding: 10, 8
+                        size_hint_y: None
+                        height: 35
+                        on_text_validate: root.ids.lyrics_input.focus = True
+
+            # Barra de ações
             BoxLayout:
                 size_hint_y: None
                 height: 55
                 spacing: 10
-                
-                # Título do projeto
-                TextInput:
-                    id: project_title_input
-                    hint_text: "Título da música"
-                    hint_text_color: 0.6, 0.6, 0.6, 1
-                    font_size: 18
-                    multiline: False
-                    foreground_color: 0.2, 0.2, 0.2, 1
-                    background_color: 1, 1, 1, 1
-                    cursor_color: 0.1, 0.5, 0.8, 1
-                    on_text_validate: root.ids.project_key_input.focus = True
-                
-                # Coluna dos botões
-                BoxLayout:
-                    orientation: 'vertical'
-                    size_hint_x: 0.3
-                    spacing: 5
-                    
-                    # Botão Salvar
-                    Button:
-                        text: "SALVAR"
-                        background_normal: ''
-                        background_color: 0.2, 0.7, 0.4, 1
-                        color: 1, 1, 1, 1
-                        bold: True
-                        font_size: '14sp'
-                        on_press: root.save_project()
+                padding: 15, 10, 15, 15
 
-                    # Botão Carregar
-                    Button:
-                        text: "CARREGAR"
-                        background_normal: ''
-                        background_color: 0.4, 0.5, 0.9, 1
-                        color: 1, 1, 1, 1
-                        bold: True
-                        font_size: '14sp'
-                        on_press: root.load_project()
+                Button:
+                    text: "SALVAR"
+                    background_normal: ''
+                    background_color: 0.2, 0.6, 0.35, 1
+                    color: 1, 1, 1, 1
+                    bold: True
+                    font_size: '13sp'
+                    size_hint_x: 0.25
+                    canvas.before:
+                        Color:
+                            rgba: 0.2, 0.6, 0.35, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [4, 4, 4, 4]
+                    on_press: root.save_project()
 
-                    # Botão Buscar Letra
-                    Button:
-                        text: "BUSCAR LETRA"
-                        background_normal: ''
-                        background_color: 0.9, 0.6, 0.2, 1  # Laranja
-                        color: 1, 1, 1, 1
-                        bold: True
-                        font_size: '14sp'
-                        on_press: root.fetch_lyrics_from_letras()
+                Button:
+                    text: "CARREGAR"
+                    background_normal: ''
+                    background_color: 0.2, 0.5, 0.8, 1
+                    color: 1, 1, 1, 1
+                    bold: True
+                    font_size: '13sp'
+                    size_hint_x: 0.25
+                    canvas.before:
+                        Color:
+                            rgba: 0.2, 0.5, 0.8, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [4, 4, 4, 4]
+                    on_press: root.load_project()
 
-            # Linha da tonalidade e descrição
-            BoxLayout:
-                size_hint_y: None
-                height: 45
-                spacing: 10
-                
-                TextInput:
-                    id: project_key_input
-                    hint_text: "Tonalidade (ex: C, Am, G#)"
-                    hint_text_color: 0.6, 0.6, 0.6, 1
-                    size_hint_x: 0.3
-                    multiline: False
-                    font_size: 16
-                    foreground_color: 0.2, 0.2, 0.2, 1
-                    background_color: 1, 1, 1, 1
-                    cursor_color: 0.1, 0.5, 0.8, 1
-                    on_text_validate: root.ids.project_description_input.focus = True
+                Button:
+                    text: "BUSCAR LETRA"
+                    background_normal: ''
+                    background_color: 0.8, 0.5, 0.2, 1
+                    color: 1, 1, 1, 1
+                    bold: True
+                    font_size: '13sp'
+                    size_hint_x: 0.25
+                    canvas.before:
+                        Color:
+                            rgba: 0.8, 0.5, 0.2, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [4, 4, 4, 4]
+                    on_press: root.fetch_lyrics_from_letras()
 
-                TextInput:
-                    id: project_description_input
-                    hint_text: "Compositor"
-                    hint_text_color: 0.6, 0.6, 0.6, 1
-                    size_hint_x: 0.7
-                    multiline: False
-                    font_size: 16
-                    foreground_color: 0.2, 0.2, 0.2, 1
-                    background_color: 1, 1, 1, 1
-                    cursor_color: 0.1, 0.5, 0.8, 1
-                    on_text_validate: root.ids.lyrics_input.focus = True
+                Button:
+                    text: "RESETAR"
+                    background_normal: ''
+                    background_color: 0.8, 0.3, 0.3, 1
+                    color: 1, 1, 1, 1
+                    bold: True
+                    font_size: '13sp'
+                    size_hint_x: 0.25
+                    canvas.before:
+                        Color:
+                            rgba: 0.8, 0.3, 0.3, 1
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [4, 4, 4, 4]
+                    on_press: root.reset_all_fields()
 
-        # Área de edição da letra
-        TextInput:
-            id: lyrics_input
-            hint_text: "Digite ou cole a letra com acordes no formato [Am]"
-            hint_text_color: 0.6, 0.6, 0.6, 1
-            size_hint_y: 0.35
-            multiline: True
-            font_size: 16
-            foreground_color: 0.2, 0.2, 0.2, 1
-            background_color: 1, 1, 1, 1
-            cursor_color: 0.1, 0.5, 0.8, 1
-            on_text: root.on_text_change(*args)
-
-        # Inserção de acordes
+        # Seção de edição da letra
         BoxLayout:
-            size_hint_y: None
-            height: 55
-            spacing: 10
+            orientation: 'vertical'
+            size_hint_y: 0.4
+            spacing: 0
+            padding: 0
 
-            TextInput:
-                id: chord_input
-                hint_text: "Acorde (ex: Am, C7)"
-                hint_text_color: 0.6, 0.6, 0.6, 1
-                multiline: False
-                foreground_color: 0.2, 0.2, 0.2, 1
-                background_color: 1, 1, 1, 1
-                cursor_color: 0.1, 0.5, 0.8, 1
-                on_text_validate: root.insert_chord_tag()
-
-            Button:
-                text: "Inserir acorde"
-                size_hint_x: 0.4
-                background_normal: ''
-                background_color: 0.1, 0.5, 0.8, 1
-                color: 1, 1, 1, 1
+            # Título da seção
+            Label:
+                text: "EDIÇÃO DA LETRA"
+                size_hint_y: None
+                height: 35
+                font_size: '14sp'
                 bold: True
-                on_press: root.insert_chord_tag()
+                color: 0.2, 0.2, 0.2, 1
+                halign: 'left'
+                padding: 15, 0
+                text_size: self.width, None
+                canvas.before:
+                    Color:
+                        rgba: 0.96, 0.97, 0.98, 1
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
 
-        # Pré-visualização HORIZONTAL (cifra + análise)
+            # Área de texto
+            BoxLayout:
+                orientation: 'vertical'
+                padding: 15, 10, 15, 0
+                spacing: 10
+
+                TextInput:
+                    id: lyrics_input
+                    hint_text: "Digite ou cole a letra com acordes no formato [Am]"
+                    hint_text_color: 0.6, 0.6, 0.6, 1
+                    multiline: True
+                    font_size: 15
+                    foreground_color: 0.2, 0.2, 0.2, 1
+                    background_color: 0.98, 0.98, 0.98, 1
+                    cursor_color: 0.2, 0.5, 0.8, 1
+                    padding: 15, 10
+                    on_text: root.on_text_change(*args)
+
+                # Inserção de acordes
+                BoxLayout:
+                    size_hint_y: None
+                    height: 45
+                    spacing: 10
+
+                    TextInput:
+                        id: chord_input
+                        hint_text: "Acorde (ex: Am, C7)"
+                        hint_text_color: 0.6, 0.6, 0.6, 1
+                        multiline: False
+                        font_size: 14
+                        foreground_color: 0.2, 0.2, 0.2, 1
+                        background_color: 0.98, 0.98, 0.98, 1
+                        cursor_color: 0.2, 0.5, 0.8, 1
+                        padding: 10, 8
+                        on_text_validate: root.insert_chord_tag()
+
+                    Button:
+                        text: "Inserir Acorde"
+                        size_hint_x: 0.3
+                        background_normal: ''
+                        background_color: 0.2, 0.5, 0.8, 1
+                        color: 1, 1, 1, 1
+                        bold: True
+                        font_size: '13sp'
+                        canvas.before:
+                            Color:
+                                rgba: 0.2, 0.5, 0.8, 1
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [4, 4, 4, 4]
+                        on_press: root.insert_chord_tag()
+
+        # Seção de pré-visualização
         BoxLayout:
             orientation: 'horizontal'
-            size_hint_y: 0.4
-            spacing: 15
+            size_hint_y: 0.45
+            spacing: 0
+            padding: 0
 
-            # Cifra (esquerda)
+            # Painel da cifra
             BoxLayout:
                 orientation: 'vertical'
                 size_hint_x: 0.6
+                spacing: 0
                 canvas.before:
                     Color:
                         rgba: 1, 1, 1, 1
@@ -167,24 +326,30 @@
                         pos: self.pos
                         size: self.size
 
+                # Cabeçalho da cifra
                 Label:
                     text: "CIFRA"
                     size_hint_y: None
-                    height: 35
-                    font_size: '16sp'
+                    height: 40
+                    font_size: '14sp'
                     bold: True
-                    color: 0.1, 0.5, 0.8, 1
+                    color: 0.2, 0.2, 0.2, 1
+                    halign: 'left'
+                    padding: 15, 0
+                    text_size: self.width, None
                     canvas.before:
                         Color:
-                            rgba: 0.9, 0.94, 0.98, 1
+                            rgba: 0.94, 0.96, 0.98, 1
                         Rectangle:
                             pos: self.pos
                             size: self.size
 
+                # Área de visualização da cifra
                 ScrollView:
-                    bar_width: 10
-                    bar_color: 0.1, 0.5, 0.8, 0.7
-                    bar_inactive_color: 0.1, 0.5, 0.8, 0.4
+                    bar_width: 8
+                    bar_color: 0.2, 0.5, 0.8, 0.6
+                    bar_inactive_color: 0.2, 0.5, 0.8, 0.3
+                    do_scroll_x: False
 
                     Label:
                         id: cifra_preview
@@ -192,16 +357,28 @@
                         text_size: self.width, None
                         size_hint_y: None
                         height: self.texture_size[1]
-                        font_size: 16
-                        padding: 10, 10
+                        font_size: 15
+                        padding: 15, 15
                         halign: 'left'
                         valign: 'top'
                         color: 0.2, 0.2, 0.2, 1
 
-            # Análise (direita)
+            # Separador vertical
+            Widget:
+                size_hint_x: None
+                width: 1
+                canvas.before:
+                    Color:
+                        rgba: 0.9, 0.9, 0.9, 1
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+
+            # Painel de análise
             BoxLayout:
                 orientation: 'vertical'
                 size_hint_x: 0.4
+                spacing: 0
                 canvas.before:
                     Color:
                         rgba: 1, 1, 1, 1
@@ -209,24 +386,30 @@
                         pos: self.pos
                         size: self.size
 
+                # Cabeçalho da análise
                 Label:
                     text: "ANÁLISE HARMÔNICA"
                     size_hint_y: None
-                    height: 35
-                    font_size: '16sp'
+                    height: 40
+                    font_size: '14sp'
                     bold: True
-                    color: 0.1, 0.5, 0.8, 1
+                    color: 0.2, 0.2, 0.2, 1
+                    halign: 'left'
+                    padding: 15, 0
+                    text_size: self.width, None
                     canvas.before:
                         Color:
-                            rgba: 0.9, 0.94, 0.98, 1
+                            rgba: 0.94, 0.96, 0.98, 1
                         Rectangle:
                             pos: self.pos
                             size: self.size
 
+                # Área de análise
                 ScrollView:
-                    bar_width: 10
-                    bar_color: 0.1, 0.5, 0.8, 0.7
-                    bar_inactive_color: 0.1, 0.5, 0.8, 0.4
+                    bar_width: 8
+                    bar_color: 0.2, 0.5, 0.8, 0.6
+                    bar_inactive_color: 0.2, 0.5, 0.8, 0.3
+                    do_scroll_x: False
 
                     Label:
                         id: metadata_preview
@@ -234,107 +417,195 @@
                         text_size: self.width, None
                         size_hint_y: None
                         height: self.texture_size[1]
-                        font_size: 14
-                        padding: 10, 10
+                        font_size: 13
+                        padding: 15, 15
                         halign: 'left'
                         valign: 'top'
                         color: 0.2, 0.2, 0.2, 1
 
-    # Coluna lateral (30% da largura)
+    # Separador vertical principal
+    Widget:
+        size_hint_x: None
+        width: 2
+        canvas.before:
+            Color:
+                rgba: 0.85, 0.85, 0.85, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+    # Painel lateral de acordes (30% da largura)
     BoxLayout:
         orientation: 'vertical'
         size_hint_x: 0.3
-        spacing: 15
+        spacing: 0
+        padding: 0
+        canvas.before:
+            Color:
+                rgba: 0.98, 0.98, 0.99, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
 
-        # Lista de acordes
+        # Cabeçalho dos acordes
         Label:
             text: "ACORDES NA MÚSICA"
-            font_size: '16sp'
+            font_size: '14sp'
             size_hint_y: None
-            height: 35
+            height: 40
             bold: True
-            color: 0.1, 0.5, 0.8, 1
+            color: 0.2, 0.2, 0.2, 1
+            halign: 'left'
+            padding: 15, 0
+            text_size: self.width, None
             canvas.before:
                 Color:
-                    rgba: 0.9, 0.94, 0.98, 1
+                    rgba: 0.94, 0.96, 0.98, 1
                 Rectangle:
                     pos: self.pos
                     size: self.size
 
+        # Lista de acordes
         ScrollView:
             size_hint_y: 0.35
-            bar_width: 10
-            bar_color: 0.1, 0.5, 0.8, 0.7
-            bar_inactive_color: 0.1, 0.5, 0.8, 0.4
+            bar_width: 8
+            bar_color: 0.2, 0.5, 0.8, 0.6
+            bar_inactive_color: 0.2, 0.5, 0.8, 0.3
+            do_scroll_x: False
 
             GridLayout:
                 id: chord_list
                 cols: 1
                 size_hint_y: None
                 height: self.minimum_height
-                spacing: 5
+                spacing: 2
                 padding: 10
-                canvas.before:
-                    Color:
-                        rgba: 1, 1, 1, 1
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
 
-        # Acorde selecionado
-        Label:
-            id: selected_chord_label
-            text: "[i]Nenhum acorde selecionado[/i]"
-            markup: True
+        # Informações do acorde selecionado
+        BoxLayout:
+            orientation: 'vertical'
             size_hint_y: None
-            height: 40
-            color: 0.4, 0.4, 0.4, 1
-            canvas.before:
-                Color:
-                    rgba: 0.98, 0.98, 0.98, 1
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
+            height: 80
+            padding: 15, 10
+            spacing: 10
 
-        # Campos de edição
-        TextInput:
-            id: degree_input
-            hint_text: "Grau harmônico (ex: I, ii, V7)"
-            hint_text_color: 0.6, 0.6, 0.6, 1
-            size_hint_y: None
-            height: 55
-            multiline: False
-            foreground_color: 0.2, 0.2, 0.2, 1
-            background_color: 1, 1, 1, 1
-            cursor_color: 0.1, 0.5, 0.8, 1
+            Label:
+                text: "ACORDE SELECIONADO"
+                size_hint_y: None
+                height: 20
+                font_size: '12sp'
+                bold: True
+                color: 0.4, 0.4, 0.4, 1
+                halign: 'left'
+                text_size: self.width, None
 
-        TextInput:
-            id: comment_input
-            hint_text: "Análise/comentário"
-            hint_text_color: 0.6, 0.6, 0.6, 1
-            size_hint_y: 0.2
-            foreground_color: 0.2, 0.2, 0.2, 1
-            background_color: 1, 1, 1, 1
-            cursor_color: 0.1, 0.5, 0.8, 1
+            Label:
+                id: selected_chord_label
+                text: "[i]Nenhum acorde selecionado[/i]"
+                markup: True
+                size_hint_y: None
+                height: 25
+                font_size: '14sp'
+                color: 0.2, 0.2, 0.2, 1
+                halign: 'left'
+                text_size: self.width, None
+
+        # Campos de análise
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.4
+            padding: 15, 10
+            spacing: 15
+
+            # Campo grau harmônico
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: 70
+                spacing: 5
+
+                Label:
+                    text: "Grau Harmônico"
+                    size_hint_y: None
+                    height: 20
+                    font_size: '12sp'
+                    color: 0.4, 0.4, 0.4, 1
+                    halign: 'left'
+                    text_size: self.width, None
+
+                TextInput:
+                    id: degree_input
+                    hint_text: "Ex: I, ii, V7, vi"
+                    hint_text_color: 0.6, 0.6, 0.6, 1
+                    size_hint_y: None
+                    height: 40
+                    multiline: False
+                    font_size: 14
+                    foreground_color: 0.2, 0.2, 0.2, 1
+                    background_color: 0.98, 0.98, 0.98, 1
+                    cursor_color: 0.2, 0.5, 0.8, 1
+                    padding: 10, 8
+
+            # Campo comentário
+            BoxLayout:
+                orientation: 'vertical'
+                spacing: 5
+
+                Label:
+                    text: "Análise/Comentário"
+                    size_hint_y: None
+                    height: 20
+                    font_size: '12sp'
+                    color: 0.4, 0.4, 0.4, 1
+                    halign: 'left'
+                    text_size: self.width, None
+
+                TextInput:
+                    id: comment_input
+                    hint_text: "Adicione suas observações..."
+                    hint_text_color: 0.6, 0.6, 0.6, 1
+                    multiline: True
+                    font_size: 14
+                    foreground_color: 0.2, 0.2, 0.2, 1
+                    background_color: 0.98, 0.98, 0.98, 1
+                    cursor_color: 0.2, 0.5, 0.8, 1
+                    padding: 10, 8
 
         # Botões de ação
         BoxLayout:
             size_hint_y: None
-            height: 55
+            height: 50
             spacing: 10
+            padding: 15, 0, 15, 15
 
             Button:
                 text: "Atualizar"
                 background_normal: ''
-                background_color: 0.3, 0.6, 0.9, 1
+                background_color: 0.2, 0.6, 0.35, 1
                 color: 1, 1, 1, 1
                 bold: True
+                font_size: '13sp'
+                canvas.before:
+                    Color:
+                        rgba: 0.2, 0.6, 0.35, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [4, 4, 4, 4]
                 on_press: root.update_metadata()
 
             Button:
                 text: "Limpar"
                 background_normal: ''
-                background_color: 0.9, 0.5, 0.5, 1
+                background_color: 0.8, 0.3, 0.3, 1
                 color: 1, 1, 1, 1
                 bold: True
+                font_size: '13sp'
+                canvas.before:
+                    Color:
+                        rgba: 0.8, 0.3, 0.3, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [4, 4, 4, 4]
                 on_press: root.clear_metadata_fields()

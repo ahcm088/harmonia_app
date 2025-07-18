@@ -5,13 +5,24 @@ from pathlib import Path
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import DictProperty, StringProperty, ListProperty, ObjectProperty
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.image import Image
+from kivy.core.window import Window
+from kivy.clock import Clock
+from kivy.core.image import Image as CoreImage
+from kivy.properties import (DictProperty, StringProperty, 
+                           ListProperty, ObjectProperty)
 from kivy.uix.button import Button
 from kivy.uix.filechooser import FileChooserIconView
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 import requests
 from bs4 import BeautifulSoup
+from difflib import SequenceMatcher
+from kivy.utils import platform
+from kivy.graphics import Color, Rectangle  # Para o fundo colorido
+from kivy.uix.progressbar import ProgressBar  # Para a barra de progresso
+from kivy.animation import Animation  # Para animar a barra de progresso
 
 try:
     Builder.load_file("ui.kv")
@@ -19,6 +30,58 @@ except Exception as e:
     print(f"Erro crítico ao carregar o arquivo KV: {e}")
     traceback.print_exc()
     raise SystemExit("Não foi possível carregar a interface. O aplicativo será encerrado.")
+
+class SplashScreen(FloatLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+        # Configura o fundo
+        with self.canvas.before:
+            Color(1, 1, 1, 1)  # Cor do seu app
+            self.rect = Rectangle(size=Window.size, pos=self.pos)
+        
+        # Container principal
+        layout = BoxLayout(orientation='vertical', padding=50)
+        
+        # Imagem central
+        self.logo = Image(
+            source='assets/harmonauta_splash.png',
+            size_hint=(None, None),
+            size=(min(Window.width, Window.height) * 0.7, 
+                min(Window.width, Window.height) * 0.7),
+            pos_hint={'center_x': 0.5},
+            allow_stretch=False,  # Substitui o keep_ratio
+            keep_data=False       # Novo parâmetro recomendado
+        )
+        
+        # Label de status
+        self.label = Label(
+            text="Inicializando...",
+            font_size='18sp',
+            color=(0.2, 0.2, 0.2, 1),
+            size_hint_y=None,
+            height=40
+        )
+        
+        # Barra de progresso
+        self.progress = ProgressBar(
+            max=100,
+            size_hint=(1, None),
+            height=20,
+            value=0
+        )
+        
+        layout.add_widget(self.logo)
+        layout.add_widget(self.label)
+        layout.add_widget(self.progress)
+        self.add_widget(layout)
+        
+        # Animação da barra de progresso
+        self.animate_progress()
+    
+    def animate_progress(self):
+        anim = Animation(value=100, duration=2.5)
+        anim.start(self.progress)
 
 class HarmonyScreen(BoxLayout):
     selected_occurrence = StringProperty("")
@@ -30,25 +93,38 @@ class HarmonyScreen(BoxLayout):
     chord_counter_map = DictProperty({})
     selected_button = ObjectProperty(None, allownone=True)
     last_text = StringProperty("")
+    last_used_dir = StringProperty("")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.bind(chord_positions=self.update_chord_buttons)
+        self.setup_default_dirs()
+
+    def setup_default_dirs(self):
+        """Configura os diretórios padrão baseado no sistema operacional"""
+        if platform == 'win':
+            self.default_dir = str(Path.home() / "Documents" / "HarmonyProjects")
+        elif platform == 'macosx':
+            self.default_dir = str(Path.home() / "Documents" / "HarmonyProjects")
+        else:  # Linux/Android
+            self.default_dir = str(Path.home() / "HarmonyProjects")
+        
+        # Tenta usar o último diretório usado ou cria o padrão
+        if not self.last_used_dir:
+            self.last_used_dir = self.default_dir
+            Path(self.default_dir).mkdir(parents=True, exist_ok=True)
 
     def on_text_change(self, instance, value):
         """Chamado quando o texto da cifra é alterado"""
         if hasattr(self, 'last_text'):
-            # Verificar se houve remoção de linhas
             old_lines = self.last_text.split('\n')
             new_lines = value.split('\n')
             
-            # Se o número de linhas mudou significativamente, forçar reparse completo
             if len(new_lines) != len(old_lines):
                 self.parse_chords()
                 self.last_text = value
                 return
             
-            # Verificar se alguma linha foi completamente removida
             for i, old_line in enumerate(old_lines):
                 if i >= len(new_lines):
                     self.parse_chords()
@@ -102,7 +178,6 @@ class HarmonyScreen(BoxLayout):
         self.ids.chord_input.text = ""
 
     def parse_chords(self):
-        # Guardar a seleção atual antes de fazer o parse
         current_selection = self.selected_occurrence
         current_button = self.selected_button
         
@@ -110,21 +185,20 @@ class HarmonyScreen(BoxLayout):
         pattern = r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]'
         matches = list(re.finditer(pattern, text, re.IGNORECASE))
         
-        # Criar mapeamento mais inteligente de acordes para metadados
         temp_metadata_map = {}
         for key, meta in self.chord_metadata.items():
             if 'chord' in meta:
                 chord = meta['chord']
                 if chord not in temp_metadata_map:
                     temp_metadata_map[chord] = []
-                # Armazenar também o contexto (linha e posição relativa)
                 if key.startswith('pos_'):
                     pos = int(key.split('_')[1])
                     line_number = text.count('\n', 0, pos) + 1
                     line_start = text.rfind('\n', 0, pos) + 1
                     line_text = text[line_start:text.find('\n', line_start)]
-                    line_chord_pos = len(re.findall(r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
-                                                 line_text[:pos-line_start])) + 1
+                    line_chord_pos = len(re.findall(
+                        r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
+                        line_text[:pos-line_start])) + 1
                     temp_metadata_map[chord].append({
                         'meta': meta,
                         'line_number': line_number,
@@ -144,28 +218,24 @@ class HarmonyScreen(BoxLayout):
             line_number = text.count('\n', 0, pos) + 1
             line_start = text.rfind('\n', 0, pos) + 1
             line_text = text[line_start:text.find('\n', line_start)]
-            line_chord_pos = len(re.findall(r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
-                                          line_text[:pos-line_start])) + 1
+            line_chord_pos = len(re.findall(
+                r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
+                line_text[:pos-line_start])) + 1
             
             found_meta = None
-            
-            # Primeiro tentar encontrar pela posição exata (se ainda existe)
             old_key = f"pos_{pos}"
             if old_key in self.chord_metadata and self.chord_metadata[old_key].get('chord') == chord:
                 found_meta = self.chord_metadata[old_key]
             else:
-                # Se não encontrou pela posição, tentar pelo contexto (linha e posição na linha)
                 if chord in temp_metadata_map:
                     for candidate in temp_metadata_map[chord]:
                         if ('line_number' in candidate and 
                             candidate['line_number'] == line_number and 
                             candidate['line_chord_pos'] == line_chord_pos):
                             found_meta = candidate['meta']
-                            # Remover da lista para não reutilizar
                             temp_metadata_map[chord].remove(candidate)
                             break
                     
-                    # Se ainda não encontrou, pegar o primeiro disponível (como fallback)
                     if not found_meta and temp_metadata_map[chord]:
                         found_meta = temp_metadata_map[chord].pop(0)['meta']
             
@@ -186,7 +256,6 @@ class HarmonyScreen(BoxLayout):
         self.chord_metadata = new_metadata
         self.cleanup_metadata()
         
-        # Restaurar a seleção se o acorde ainda existir
         if current_selection in self.chord_metadata:
             self.selected_occurrence = current_selection
             if current_button and current_button.parent is self.ids.chord_list:
@@ -204,15 +273,12 @@ class HarmonyScreen(BoxLayout):
         self.update_selected_chord_label()
 
     def cleanup_metadata(self):
-        """Remove metadados de acordes que não existem mais na cifra"""
         text = self.ids.lyrics_input.text
         current_positions = [f"pos_{pos}" for pos in self.chord_positions]
         
-        # Verificar se o acorde selecionado ainda existe
         if self.selected_occurrence and self.selected_occurrence not in current_positions:
             self.selected_occurrence = ""
             if self.selected_button and self.selected_button.parent is self.ids.chord_list:
-                # Resetar a cor do botão se ele ainda existir
                 meta = self.chord_metadata.get(self.selected_occurrence, {})
                 has_metadata = meta.get("degree") or meta.get("comment")
                 if has_metadata:
@@ -227,8 +293,9 @@ class HarmonyScreen(BoxLayout):
             if key.startswith('pos_') and key not in current_positions:
                 pos = int(key.split('_')[1])
                 if pos < len(text) and text[pos] == '[':
-                    match = re.match(r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
-                                   text[pos:pos+20])
+                    match = re.match(
+                        r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
+                        text[pos:pos+20])
                     if match:
                         continue
                 del self.chord_metadata[key]
@@ -251,14 +318,12 @@ class HarmonyScreen(BoxLayout):
         line_start = text.rfind('\n', 0, pos) + 1
         line_chord_pos = len(re.findall(
             r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
-            text[line_start:pos]
-        )) + 1
+            text[line_start:pos])) + 1
         chord_number = self.chord_counter_map.get(key, 0)
         display_text = f"[b]Acorde selecionado:[/b] #{chord_number} (L{line_number}-{line_chord_pos}) {chord}"
         self.ids.selected_chord_label.text = display_text
 
     def update_chord_buttons(self, *args):
-        # Limpar a referência se o botão não existir mais
         if self.selected_button and self.selected_button.parent is None:
             self.selected_button = None
             self.selected_occurrence = ""
@@ -274,8 +339,9 @@ class HarmonyScreen(BoxLayout):
         line_chord_counts = {}
         
         for idx, pos in enumerate(self.chord_positions):
-            match = re.match(r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
-                            text[pos:pos+20])
+            match = re.match(
+                r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
+                text[pos:pos+20])
             if not match:
                 continue
                 
@@ -299,16 +365,16 @@ class HarmonyScreen(BoxLayout):
             has_metadata = meta["degree"] or meta["comment"]
             
             if is_selected and has_metadata:
-                bg_color = (0.1, 0.6, 0.1, 1)  # Verde escuro
+                bg_color = (0.1, 0.6, 0.1, 1)
                 text_color = (1, 1, 1, 1)
             elif is_selected and not has_metadata:
-                bg_color = (0.1, 0.3, 0.7, 1)   # Azul escuro
+                bg_color = (0.1, 0.3, 0.7, 1)
                 text_color = (1, 1, 1, 1)
             elif not is_selected and has_metadata:
-                bg_color = (0.4, 0.9, 0.4, 1)   # Verde claro
+                bg_color = (0.4, 0.9, 0.4, 1)
                 text_color = (0, 0, 0, 1)
             else:
-                bg_color = (0.7, 0.7, 0.7, 1)   # Cinza médio
+                bg_color = (0.7, 0.7, 0.7, 1)
                 text_color = (0, 0, 0, 1)
             
             btn = Button(
@@ -368,11 +434,9 @@ class HarmonyScreen(BoxLayout):
             
         key = self.selected_occurrence
         if key in self.chord_metadata:
-            # Atualizar metadados
             self.chord_metadata[key]["degree"] = self.ids.degree_input.text
             self.chord_metadata[key]["comment"] = self.ids.comment_input.text
             
-            # Atualizar o botão selecionado
             if self.selected_button:
                 pos = int(key.split('_')[1])
                 text = self.ids.lyrics_input.text
@@ -380,8 +444,7 @@ class HarmonyScreen(BoxLayout):
                 line_start = text.rfind('\n', 0, pos) + 1
                 line_chord_pos = len(re.findall(
                     r'\[([A-G][#b]?(?:m|maj|min|dim|aug|\d|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]', 
-                    text[line_start:pos]
-                )) + 1
+                    text[line_start:pos])) + 1
                 chord_number = self.chord_counter_map.get(key, 0)
                 chord = self.chord_metadata[key]["chord"]
                 
@@ -393,7 +456,6 @@ class HarmonyScreen(BoxLayout):
                 else:
                     self.selected_button.background_color = (0.1, 0.3, 0.7, 1)
             
-            # Forçar atualização da interface
             self.update_selected_chord_label()
             self.parse_chords()
 
@@ -446,11 +508,14 @@ class HarmonyScreen(BoxLayout):
                 path = Path(folder_path) / default_filename
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
+                self.last_used_dir = str(Path(folder_path))
                 self.show_info_popup(f"Projeto salvo com sucesso em:\n{path}")
             except Exception as e:
                 self.show_info_popup(f"Erro ao salvar:\n{str(e)}")
 
-        self.show_directory_chooser(write_to_path)
+        # Usa o último diretório ou o padrão se não existir
+        initial_path = self.last_used_dir if Path(self.last_used_dir).exists() else self.default_dir
+        self.show_directory_chooser(write_to_path, initial_path=initial_path)
 
     def load_project(self):
         def load_from_file(path):
@@ -466,6 +531,7 @@ class HarmonyScreen(BoxLayout):
                 self.selected_button = None
                 self.selected_occurrence = ""
                 self.ids.selected_chord_label.text = "[i]Nenhum acorde selecionado[/i]"
+                self.last_used_dir = str(Path(path).parent)
                 self.parse_chords()
                 self.show_info_popup("Projeto carregado com sucesso!")
             except json.JSONDecodeError:
@@ -473,19 +539,26 @@ class HarmonyScreen(BoxLayout):
             except Exception as e:
                 self.show_info_popup(f"Erro ao carregar:\n{str(e)}")
 
-        self.show_file_chooser(load_from_file, save=False)
+        # Usa o último diretório ou o padrão se não existir
+        initial_path = self.last_used_dir if Path(self.last_used_dir).exists() else self.default_dir
+        self.show_file_chooser(load_from_file, save=False, initial_path=initial_path)
 
-    def show_directory_chooser(self, callback):
-        chooser = FileChooserIconView(path=".", dirselect=True)
+    def show_directory_chooser(self, callback, initial_path=None):
+        chooser = FileChooserIconView(
+            path=initial_path if initial_path else ".",
+            dirselect=True
+        )
         layout = BoxLayout(orientation='vertical')
         layout.add_widget(chooser)
 
         confirm = Button(text="Salvar nesta pasta", size_hint_y=0.1)
         layout.add_widget(confirm)
 
-        popup = Popup(title="Escolher pasta para salvar",
-                      content=layout,
-                      size_hint=(0.9, 0.9))
+        popup = Popup(
+            title="Escolher pasta para salvar",
+            content=layout,
+            size_hint=(0.9, 0.9)
+        )
 
         def _confirm(*args):
             if chooser.selection:
@@ -495,17 +568,25 @@ class HarmonyScreen(BoxLayout):
         confirm.bind(on_press=_confirm)
         popup.open()
 
-    def show_file_chooser(self, callback, save=False):
-        chooser = FileChooserIconView(path=".", filters=["*.harmonia.json", "*.json"])
+    def show_file_chooser(self, callback, save=False, initial_path=None):
+        chooser = FileChooserIconView(
+            path=initial_path if initial_path else ".",
+            filters=["*.harmonia.json", "*.json"]
+        )
         layout = BoxLayout(orientation='vertical')
         layout.add_widget(chooser)
 
-        confirm = Button(text="Salvar aqui" if save else "Carregar", size_hint_y=0.1)
+        confirm = Button(
+            text="Salvar aqui" if save else "Carregar", 
+            size_hint_y=0.1
+        )
         layout.add_widget(confirm)
 
-        popup = Popup(title="Salvar projeto" if save else "Carregar projeto",
-                      content=layout,
-                      size_hint=(0.9, 0.9))
+        popup = Popup(
+            title="Salvar projeto" if save else "Carregar projeto",
+            content=layout,
+            size_hint=(0.9, 0.9)
+        )
 
         def _confirm(*args):
             if chooser.selection:
@@ -516,9 +597,11 @@ class HarmonyScreen(BoxLayout):
         popup.open()
 
     def show_info_popup(self, message):
-        popup = Popup(title="Informação",
-                      content=Label(text=message),
-                      size_hint=(0.7, 0.5))
+        popup = Popup(
+            title="Informação",
+            content=Label(text=message),
+            size_hint=(0.7, 0.5)
+        )
         popup.open()
 
     def fetch_lyrics_from_letras(self):
@@ -535,26 +618,67 @@ class HarmonyScreen(BoxLayout):
                 "Accept-Language": "pt-BR,pt;q=0.9"
             }
 
-            # URL do artista (ex: https://www.letras.com/cartola/)
-            artist_slug = artist.strip().lower().replace(" ", "-")
-            artist_url = f"https://www.letras.com/{artist_slug}/"
-            response = requests.get(artist_url, headers=headers)
+            # Processar o nome do artista para a URL
+            artist_slug = (
+                artist.strip()
+                .lower()
+                .replace(" ", "-")
+                .replace("'", "")
+                .replace("á", "a").replace("à", "a").replace("ã", "a").replace("â", "a")
+                .replace("é", "e").replace("ê", "e")
+                .replace("í", "i").replace("î", "i")
+                .replace("ó", "o").replace("ô", "o").replace("õ", "o")
+                .replace("ú", "u").replace("û", "u")
+                .replace("ç", "c")
+            )
+            
+            # Tentar diferentes variações da URL do artista
+            artist_urls = [
+                f"https://www.letras.com/{artist_slug}/",
+                f"https://www.letras.com/{artist_slug}-mc/",
+                f"https://www.letras.com/{artist_slug}-banda/",
+                f"https://www.letras.com/{artist_slug}-musica/",
+            ]
 
-            if response.status_code != 200:
+            response = None
+            for url in artist_urls:
+                try:
+                    response = requests.get(url, headers=headers, timeout=10)
+                    if response.status_code == 200:
+                        artist_url = url
+                        break
+                except requests.RequestException:
+                    continue
+
+            if not response or response.status_code != 200:
                 self.show_info_popup("Artista não encontrado no letras.com.")
                 return
 
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Busca pelo <a> com o title exatamente igual ao nome da música
-            link = soup.find("a", title=title)
+            # Encontra todos os links de músicas
+            song_links = soup.find_all("a", title=True)
 
-            if not link:
-                self.show_info_popup("Música não encontrada na página do artista.")
+            # Compara títulos por similaridade
+            def similarity(a, b):
+                return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+
+            best_match = None
+            best_score = 0.0
+
+            for link in song_links:
+                candidate = link.get("title")
+                if candidate:
+                    score = similarity(title, candidate)
+                    if score > best_score:
+                        best_score = score
+                        best_match = link
+
+            if not best_match or best_score < 0.6:
+                self.show_info_popup("Música não encontrada ou muito diferente do título fornecido.")
                 return
 
-            # URL completa da música
-            lyrics_url = "https://www.letras.com" + link["href"]
+            lyrics_url = "https://www.letras.com" + best_match["href"]
             lyrics_response = requests.get(lyrics_url, headers=headers)
 
             if lyrics_response.status_code != 200:
@@ -562,31 +686,96 @@ class HarmonyScreen(BoxLayout):
                 return
 
             lyrics_soup = BeautifulSoup(lyrics_response.text, "html.parser")
-
-            # ⬅️ CORREÇÃO: Agora busca dentro da classe "lyric-original"
             lyrics_div = lyrics_soup.find("div", class_="lyric-original")
 
             if not lyrics_div:
                 self.show_info_popup("Letra não encontrada.")
                 return
 
-            # A letra está em <p> ou direto como texto
             lyrics = lyrics_div.get_text(separator="\n", strip=True)
 
             if lyrics.strip():
                 self.ids.lyrics_input.text = lyrics
-                self.show_info_popup("Letra carregada com sucesso!")
+                self.show_info_popup(f"Letra carregada com sucesso!\nTítulo mais próximo encontrado:\n{best_match.get('title')}")
             else:
                 self.show_info_popup("Letra encontrada, mas está vazia.")
 
         except Exception as e:
             self.show_info_popup(f"Erro inesperado:\n{str(e)}")
 
-class HarmonyApp(App):
-    def build(self):
-        self.title = "Editor de Cifras"
-        return HarmonyScreen()
+    def reset_all_fields(self):
+        """Reseta todos os campos do projeto para os valores padrão"""
+        content = BoxLayout(orientation='vertical', spacing=10, padding=10)
+        content.add_widget(Label(
+            text="Tem certeza que deseja resetar todos os campos?\nTodos os dados não salvos serão perdidos."
+        ))
+        
+        btn_layout = BoxLayout(spacing=5, size_hint_y=0.3)
+        btn_yes = Button(text="Sim", background_color=(0.8, 0.3, 0.3, 1))
+        btn_no = Button(text="Cancelar", background_color=(0.2, 0.6, 0.35, 1))
+        btn_layout.add_widget(btn_no)
+        btn_layout.add_widget(btn_yes)
+        
+        content.add_widget(btn_layout)
+        
+        popup = Popup(
+            title="Confirmar Reset",
+            content=content,
+            size_hint=(0.7, 0.4)
+        )
+        
+        def confirm_reset(instance):
+            self.ids.project_title_input.text = ""
+            self.ids.project_description_input.text = ""
+            self.ids.project_key_input.text = ""
+            self.ids.lyrics_input.text = ""
+            self.ids.chord_input.text = ""
+            self.chord_metadata = {}
+            self.selected_occurrence = ""
+            self.selected_button = None
+            self.chord_positions = []
+            self.chord_counter_map = {}
+            self.ids.degree_input.text = ""
+            self.ids.comment_input.text = ""
+            self.ids.selected_chord_label.text = "[i]Nenhum acorde selecionado[/i]"
+            self.ids.cifra_preview.text = ""
+            self.ids.metadata_preview.text = ""
+            self.ids.chord_list.clear_widgets()
+            
+            popup.dismiss()
+            self.show_info_popup("Todos os campos foram resetados com sucesso!")
+        
+        btn_yes.bind(on_press=confirm_reset)
+        btn_no.bind(on_press=popup.dismiss)
+        
+        popup.open()
 
+class HarmonyApp(App):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.main_screen = None
+        self.splash = None
+        self.splash_duration = 3.0
+
+    def build(self):
+        self.title = "Harmonauta"
+        self.icon = 'assets/harmonauta_logo.png'
+        CoreImage('assets/harmonauta_splash.png')
+        self.splash = SplashScreen()
+        Clock.schedule_once(self.build_main_interface, 0.1)
+        return self.splash
+    
+    def build_main_interface(self, dt):
+        if hasattr(self.splash, 'label'):  # Verificação segura
+            self.splash.label.text = "Carregando recursos..."
+        
+        self.main_screen = HarmonyScreen()
+        Clock.schedule_once(self.show_main_interface, max(0.1, self.splash_duration - 0.6))
+    
+    def show_main_interface(self, dt):
+        Window.remove_widget(self.splash)
+        Window.add_widget(self.main_screen)
+        self.splash = None
 
 if __name__ == "__main__":
     HarmonyApp().run()
