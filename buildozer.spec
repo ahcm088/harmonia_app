@@ -5,7 +5,7 @@ package.domain = org.harmonauta
 source.dir = .
 source.include_exts = py,kv,png,jpg,ttf
 version = 1.0
-requirements = kivy==2.2.1,requests,beautifulsoup4
+requirements = python3,kivy==2.2.1,requests,beautifulsoup4
 orientation = portrait
 fullscreen = 1
 osx.kivy_version = 2.2.1
@@ -41,9 +41,6 @@ android.use_prebuilt_libffi = True
 
 # Usar uma versão mais recente do NDK
 android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk
-
-# Configurações adicionais para evitar problemas de compilação
-android.p4a_dir = /home/runner/.local/lib/python3.9/site-packages/pythonforandroid
 
 [buildozer]
 log_level = 2
