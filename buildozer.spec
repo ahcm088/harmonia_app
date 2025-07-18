@@ -18,6 +18,9 @@ presplash.filename = assets/harmonauta_splash.png
 android.presplash_color = #FFFFFF
 android.add_resource = assets
 
+# FIX para evitar erro build-tools license
+android.build_tools_version = 30.0.3
+
 [buildozer]
 log_level = 2
 warn_on_root = 1
