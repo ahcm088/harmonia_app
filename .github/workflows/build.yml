@@ -14,7 +14,7 @@ jobs:
 
       - name: Clean previous builds
         run: |
-          rm -rf ~/.buildozer/android/platform/build
+          rm -rf ~/.buildozer
           rm -rf ~/.gradle/caches
           rm -rf .buildozer
 
@@ -30,27 +30,26 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install Buildozer and dependencies
+      - name: Install Python for Android and Buildozer
         run: |
           pip install --upgrade pip setuptools wheel
-          pip install buildozer cython virtualenv
+          pip install python-for-android==2023.8.25 buildozer==1.5.0 cython==0.29.36 virtualenv
 
-      - name: Setup Android SDK and NDK
+      - name: Setup Android environment
         run: |
           mkdir -p ~/.buildozer/android/platform
           cd ~/.buildozer/android/platform
           
-          # Install Android Command Line Tools
+          # Install Command Line Tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q commandlinetools-linux-9477386_latest.zip -d cmdline-tools
           mv cmdline-tools/cmdline-tools cmdline-tools/latest
           
-          # Install Android NDK (recommended version for Kivy)
+          # Install NDK
           wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip -q android-ndk-r25b-linux.zip
           mv android-ndk-r25b android-ndk
           
-          # Set environment variables
           echo "ANDROID_HOME=$HOME/.buildozer/android/platform" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk" >> $GITHUB_ENV
@@ -60,30 +59,40 @@ jobs:
         run: |
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
-          
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          
           mkdir -p "$ANDROID_HOME/licenses"
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-license"
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
 
-      - name: Install required Android components
+      - name: Install Android components
         run: |
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
 
-      - name: Debug info (pre-build)
+      - name: Verify environment
         run: |
+          python -c "import pythonforandroid; print(pythonforandroid.__version__)"
           buildozer --version
-          python -m pythonforandroid.toolchain recipes list
           ls -la ~/.buildozer/android/platform
 
       - name: Build APK
         run: |
+          # Create minimal buildozer.spec if not exists
+          if [ ! -f buildozer.spec ]; then
+            echo "[app]" > buildozer.spec
+            echo "title = MyApp" >> buildozer.spec
+            echo "package.name = myapp" >> buildozer.spec
+            echo "package.domain = org.test" >> buildozer.spec
+            echo "source.dir = ." >> buildozer.spec
+            echo "requirements = python3,kivy" >> buildozer.spec
+            echo "android.api = 30" >> buildozer.spec
+            echo "android.ndk_path = $HOME/.buildozer/android/platform/android-ndk" >> buildozer.spec
+          fi
+          
           buildozer -v android debug
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: harmonauta-apk
+          name: app-apk
           path: bin/*.apk
           if-no-files-found: error

@@ -44,3 +44,12 @@ android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk
 
 # Configurações adicionais para evitar problemas de compilação
 android.p4a_dir = /home/runner/.local/lib/python3.9/site-packages/pythonforandroid
+
+[buildozer]
+log_level = 2
+warn_on_root = 1
+target = android
+
+# Configurações recomendadas para Kivy 2.2.1
+p4a.branch = master
+p4a.recommended_ndk_version = 25b
