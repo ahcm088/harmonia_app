@@ -760,10 +760,11 @@ class HarmonyApp(App):
     def build(self):
         self.title = "Harmonauta"
         self.icon = 'assets/harmonauta_logo.png'
-        CoreImage('assets/harmonauta_splash.png')
         self.splash = SplashScreen()
         Clock.schedule_once(self.build_main_interface, 0.1)
-        return self.splash
+        self.root = FloatLayout()
+        self.root.add_widget(self.splash)
+        return self.root
     
     def build_main_interface(self, dt):
         if hasattr(self.splash, 'label'):  # Verificação segura
@@ -773,8 +774,8 @@ class HarmonyApp(App):
         Clock.schedule_once(self.show_main_interface, max(0.1, self.splash_duration - 0.6))
     
     def show_main_interface(self, dt):
-        Window.remove_widget(self.splash)
-        Window.add_widget(self.main_screen)
+        self.root.clear_widgets()
+        self.root.add_widget(self.main_screen)
         self.splash = None
 
 if __name__ == "__main__":
