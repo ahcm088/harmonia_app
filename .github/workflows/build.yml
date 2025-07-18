@@ -12,60 +12,70 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Clean previous builds
+        run: |
+          rm -rf ~/.buildozer/android/platform/build
+          rm -rf ~/.gradle/caches
+          rm -rf .buildozer
+
       - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y zip unzip openjdk-17-jdk python3-pip git \
                     libncurses-dev libstdc++6 libffi-dev libssl-dev \
-                    libsqlite3-dev libbz2-dev zlib1g-dev
+                    libsqlite3-dev libbz2-dev zlib1g-dev autoconf automake libtool pkg-config
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Install Buildozer
+      - name: Install Buildozer and dependencies
         run: |
-          pip install --upgrade pip setuptools
+          pip install --upgrade pip setuptools wheel
           pip install buildozer cython virtualenv
 
-      - name: Setup Android Environment
+      - name: Setup Android SDK and NDK
         run: |
-          # Configura diretórios base
           mkdir -p ~/.buildozer/android/platform
           cd ~/.buildozer/android/platform
           
-          # Instala Android Command Line Tools (nova abordagem)
+          # Install Android Command Line Tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q commandlinetools-linux-9477386_latest.zip -d cmdline-tools
           mv cmdline-tools/cmdline-tools cmdline-tools/latest
           
-          # Instala Android NDK
+          # Install Android NDK (recommended version for Kivy)
           wget -q https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
           unzip -q android-ndk-r25b-linux.zip
           mv android-ndk-r25b android-ndk
           
-          # Configura variáveis de ambiente
+          # Set environment variables
           echo "ANDROID_HOME=$HOME/.buildozer/android/platform" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk" >> $GITHUB_ENV
           echo "PATH=$PATH:$HOME/.buildozer/android/platform/cmdline-tools/latest/bin" >> $GITHUB_ENV
 
-      - name: Accept licenses and install components
+      - name: Accept Android licenses
         run: |
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
           
-          # Aceita licenças
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           
-          # Cria arquivo de licenças manualmente
           mkdir -p "$ANDROID_HOME/licenses"
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-license"
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
-          
-          # Instala componentes necessários
+
+      - name: Install required Android components
+        run: |
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
+
+      - name: Debug info (pre-build)
+        run: |
+          buildozer --version
+          python -m pythonforandroid.toolchain recipes list
+          ls -la ~/.buildozer/android/platform
 
       - name: Build APK
         run: |
@@ -76,3 +86,4 @@ jobs:
         with:
           name: harmonauta-apk
           path: bin/*.apk
+          if-no-files-found: error

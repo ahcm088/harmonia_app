@@ -35,3 +35,12 @@ android.enable_shrink = True
 android.enable_proguard = True
 android.allow_backup = False
 android.uses_clear_text_traffic = False
+
+# Forçar o uso do libffi pré-compilado
+android.use_prebuilt_libffi = True
+
+# Usar uma versão mais recente do NDK
+android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk
+
+# Configurações adicionais para evitar problemas de compilação
+android.p4a_dir = /home/runner/.local/lib/python3.9/site-packages/pythonforandroid
