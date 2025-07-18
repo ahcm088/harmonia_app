@@ -33,7 +33,7 @@ jobs:
       - name: Install Python for Android and Buildozer
         run: |
           pip install --upgrade pip setuptools wheel
-          pip install python-for-android==2023.8.25 buildozer==1.5.0 cython==0.29.36 virtualenv
+          pip install python-for-android==2024.1.21 buildozer==1.5.0 cython==0.29.36 virtualenv
 
       - name: Setup Android environment
         run: |
@@ -76,16 +76,28 @@ jobs:
 
       - name: Build APK
         run: |
-          # Create minimal buildozer.spec if not exists
+          # Create buildozer.spec if not exists or use existing one
           if [ ! -f buildozer.spec ]; then
             echo "[app]" > buildozer.spec
-            echo "title = MyApp" >> buildozer.spec
-            echo "package.name = myapp" >> buildozer.spec
-            echo "package.domain = org.test" >> buildozer.spec
+            echo "title = Harmonauta" >> buildozer.spec
+            echo "package.name = harmonauta" >> buildozer.spec
+            echo "package.domain = org.harmonauta" >> buildozer.spec
             echo "source.dir = ." >> buildozer.spec
-            echo "requirements = python3,kivy" >> buildozer.spec
+            echo "source.include_exts = py,kv,png,jpg,ttf" >> buildozer.spec
+            echo "version = 1.0" >> buildozer.spec
+            echo "requirements = python3,kivy==2.2.1,requests,beautifulsoup4" >> buildozer.spec
+            echo "orientation = portrait" >> buildozer.spec
+            echo "fullscreen = 1" >> buildozer.spec
             echo "android.api = 30" >> buildozer.spec
+            echo "android.minapi = 21" >> buildozer.spec
+            echo "android.archs = arm64-v8a, armeabi-v7a" >> buildozer.spec
             echo "android.ndk_path = $HOME/.buildozer/android/platform/android-ndk" >> buildozer.spec
+            echo "android.build_tools_version = 30.0.3" >> buildozer.spec
+            echo "android.accept_sdk_license = True" >> buildozer.spec
+            echo "" >> buildozer.spec
+            echo "[buildozer]" >> buildozer.spec
+            echo "log_level = 2" >> buildozer.spec
+            echo "warn_on_root = 1" >> buildozer.spec
           fi
           
           buildozer -v android debug
