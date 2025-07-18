@@ -16,6 +16,7 @@ presplash.filename = assets/harmonauta_splash.png
 # Inclui assets no APK
 android.presplash_color = #FFFFFF
 android.add_resource = assets
+android.resource = assets
 
 # Configurações do Android
 android.build_tools_version = 30.0.3
@@ -43,4 +44,4 @@ p4a.branch = master
 p4a.recommended_ndk_version = 25b
 p4a.bootstrap = sdl2
 
-android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
+android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,INTERNET

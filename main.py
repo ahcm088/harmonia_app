@@ -1,6 +1,5 @@
 import json
 import re
-import traceback
 from pathlib import Path
 from kivy.app import App
 from kivy.lang import Builder
@@ -23,14 +22,10 @@ from kivy.utils import platform
 from kivy.graphics import Color, Rectangle  # Para o fundo colorido
 from kivy.uix.progressbar import ProgressBar  # Para a barra de progresso
 from kivy.animation import Animation  # Para animar a barra de progresso
-from android.storage import app_storage_path, primary_external_storage_path
+from kivy.resources import resource_add_path
+import os
 
-try:
-    Builder.load_file("ui.kv")
-except Exception as e:
-    print(f"Erro crítico ao carregar o arquivo KV: {e}")
-    traceback.print_exc()
-    raise SystemExit("Não foi possível carregar a interface. O aplicativo será encerrado.")
+resource_add_path(os.path.join(os.path.dirname(__file__), 'assets'))
 
 class SplashScreen(FloatLayout):
     def __init__(self, **kwargs):
@@ -46,7 +41,7 @@ class SplashScreen(FloatLayout):
         
         # Imagem central
         self.logo = Image(
-            source='assets/harmonauta_splash.png',
+            source= "harmonauta_splash.png",
             size_hint=(None, None),
             size=(min(Window.width, Window.height) * 0.7, 
                 min(Window.width, Window.height) * 0.7),
@@ -764,7 +759,7 @@ class HarmonyApp(App):
 
     def build(self):
         self.title = "Harmonauta"
-        self.icon = 'assets/harmonauta_logo.png'
+        self.icon = "harmonauta_logo.png"
         self.splash = SplashScreen()
         Clock.schedule_once(self.build_main_interface, 0.1)
         self.root = FloatLayout()
