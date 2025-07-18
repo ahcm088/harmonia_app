@@ -42,3 +42,5 @@ target = android
 p4a.branch = master
 p4a.recommended_ndk_version = 25b
 p4a.bootstrap = sdl2
+
+android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE

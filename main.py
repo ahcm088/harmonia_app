@@ -23,6 +23,7 @@ from kivy.utils import platform
 from kivy.graphics import Color, Rectangle  # Para o fundo colorido
 from kivy.uix.progressbar import ProgressBar  # Para a barra de progresso
 from kivy.animation import Animation  # Para animar a barra de progresso
+from android.storage import app_storage_path, primary_external_storage_path
 
 try:
     Builder.load_file("ui.kv")
@@ -102,12 +103,16 @@ class HarmonyScreen(BoxLayout):
 
     def setup_default_dirs(self):
         """Configura os diretórios padrão baseado no sistema operacional"""
-        if platform == 'win':
+        if platform == "android":
+            try:
+                from android.storage import primary_external_storage_path
+                self.default_dir = str(Path(primary_external_storage_path()) / "HarmonyProjects")
+                Path(self.default_dir).mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                self.default_dir = str(Path.home())
+        else:
             self.default_dir = str(Path.home() / "Documents" / "HarmonyProjects")
-        elif platform == 'macosx':
-            self.default_dir = str(Path.home() / "Documents" / "HarmonyProjects")
-        else:  # Linux/Android
-            self.default_dir = str(Path.home() / "HarmonyProjects")
+            Path(self.default_dir).mkdir(parents=True, exist_ok=True)
         
         # Tenta usar o último diretório usado ou cria o padrão
         if not self.last_used_dir:
