@@ -21,10 +21,6 @@ android.add_resource = assets
 # FIX para evitar erro build-tools license
 android.build_tools_version = 30.0.3
 
-[buildozer]
-log_level = 2
-warn_on_root = 1
-
 # Configurações adicionais recomendadas
 android.arch = arm64-v8a
 android.sdk = 24

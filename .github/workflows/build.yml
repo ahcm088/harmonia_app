@@ -31,28 +31,33 @@ jobs:
           pip install --upgrade pip setuptools
           pip install buildozer cython virtualenv
 
-      - name: Initialize Buildozer (download Android SDK)
+      - name: Initialize Buildozer environment
         run: |
           buildozer init
-          buildozer android update
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
 
       - name: Accept Android SDK licenses
         run: |
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
-          # Caminho correto para o sdkmanager
-          yes | $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
+          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
           echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-          echo "$HOME/.buildozer/android/platform/android-sdk/tools/bin" >> $GITHUB_PATH
+          echo "$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$HOME/.buildozer/android/platform/android-sdk/platform-tools" >> $GITHUB_PATH
 
       - name: Build the APK
         run: |
-          buildozer -v android debug
+          buildozer -v android debug 2>&1 | tee build.log
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: harmonauta-apk
           path: bin/*.apk
+
+      - name: Upload build log (for debugging)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
