@@ -24,3 +24,21 @@ android.build_tools_version = 30.0.3
 [buildozer]
 log_level = 2
 warn_on_root = 1
+
+# Configurações adicionais recomendadas
+android.arch = arm64-v8a
+android.sdk = 24
+android.ndk = 25b
+android.api = 30
+android.minapi = 21
+android.gradle_dependencies = 'com.android.tools.build:gradle:7.2.2'
+
+# Otimização para reduzir tamanho do APK
+android.enable_shrink = True
+android.enable_proguard = True
+
+[buildozer]
+# Configurações de build
+log_level = 2
+warn_on_root = 1
+target = android
