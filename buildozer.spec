@@ -5,7 +5,7 @@ package.domain = org.harmonauta
 source.dir = .
 source.include_exts = py,kv,png,jpg,ttf
 version = 1.0
-requirements = python3,kivy==2.2.1,requests,beautifulsoup4,unicodedata,android
+requirements = python3,kivy==2.2.1,requests,beautifulsoup4,typing_extensions
 orientation = portrait
 fullscreen = 1
 
