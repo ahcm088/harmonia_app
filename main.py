@@ -609,107 +609,86 @@ class HarmonyScreen(BoxLayout):
         artist = self.ids.project_description_input.text.strip()
 
         if not title or not artist:
-            self.show_info_popup("Por favor, preencha o título e o compositor para buscar a letra.")
+            self.show_info_popup("Por favor, preencha o título e o compositor.")
             return
 
+        API_URL = "https://harmonauta-lyrics-api.onrender.com/api/lyrics"
+        
         try:
-            # Desativa a verificação SSL
-            import ssl
-            ssl._create_default_https_context = ssl._create_unverified_context
-            
-            # Configura session para ignorar SSL
+            # Configuração segura com certificados atualizados
+            import certifi
             session = requests.Session()
-            session.verify = False
+            session.verify = certifi.where()  # Usa certificados confiáveis
             
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
-                "Accept-Language": "pt-BR"
+            params = {
+                'title': title,
+                'artist': artist
             }
 
-            # Processar o nome do artista para a URL
-            artist_slug = (
-                artist.strip()
-                .lower()
-                .replace(" ", "-")
-                .replace("'", "")
-                .replace("á", "a").replace("à", "a").replace("ã", "a").replace("â", "a")
-                .replace("é", "e").replace("ê", "e")
-                .replace("í", "i").replace("î", "i")
-                .replace("ó", "o").replace("ô", "o").replace("õ", "o")
-                .replace("ú", "u").replace("û", "u")
-                .replace("ç", "c")
+            # Timeout ajustado para mobile (conexão: 10s, leitura: 30s)
+            response = session.get(API_URL, params=params, timeout=(10, 30))
+            
+            # Trata respostas HTTP
+            if response.status_code == 504:  # Gateway Timeout
+                self.retry_with_backoff(API_URL, params)
+                return
+                
+            data = response.json()
+
+            if data.get('success'):
+                self.ids.lyrics_input.text = data['lyrics']
+                found_title = data.get('title', title)
+                self.show_info_popup(f"Letra carregada!\nTítulo: {found_title}")
+            else:
+                self.show_info_popup(data.get('message', 'Letra não encontrada'))
+
+        except requests.exceptions.SSLError as e:
+            self.show_info_popup("Erro de certificado SSL. Atualize o app.")
+            # Log para diagnóstico (remova em produção)
+            print(f"Erro SSL: {str(e)}")
+            
+        except requests.exceptions.RequestException as e:
+            self.handle_network_error(e)
+
+    def retry_with_backoff(self, api_url, params, attempt=1, max_attempts=3):
+        """Tentativas com backoff exponencial"""
+        try:
+            import certifi
+            response = requests.get(
+                api_url,
+                params=params,
+                verify=certifi.where(),
+                timeout=(10, 30)
             )
             
-            # Tentar diferentes variações da URL do artista
-            artist_urls = [
-                f"https://www.letras.com/{artist_slug}/",
-                f"https://www.letras.com/{artist_slug}-mc/",
-                f"https://www.letras.com/{artist_slug}-banda/",
-                f"https://www.letras.com/{artist_slug}-musica/",
-            ]
-
-            response = None
-            for url in artist_urls:
-                try:
-                    response = session.get(url, headers=headers, timeout=10)
-                    if response.status_code == 200:
-                        artist_url = url
-                        break
-                except requests.RequestException:
-                    continue
-
-            if not response or response.status_code != 200:
-                self.show_info_popup("Artista não encontrado no letras.com.")
-                return
-
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            # Encontra todos os links de músicas
-            song_links = soup.find_all("a", title=True)
-
-            # Compara títulos por similaridade
-            def similarity(a, b):
-                return SequenceMatcher(None, a.lower(), b.lower()).ratio()
-
-            best_match = None
-            best_score = 0.0
-
-            for link in song_links:
-                candidate = link.get("title")
-                if candidate:
-                    score = similarity(title, candidate)
-                    if score > best_score:
-                        best_score = score
-                        best_match = link
-
-            if not best_match or best_score < 0.6:
-                self.show_info_popup("Música não encontrada ou muito diferente do título fornecido.")
-                return
-
-            lyrics_url = "https://www.letras.com" + best_match["href"]
-            lyrics_response = session.get(lyrics_url, headers=headers, timeout=10)
-
-            if lyrics_response.status_code != 200:
-                self.show_info_popup("Erro ao acessar a página da música.")
-                return
-
-            lyrics_soup = BeautifulSoup(lyrics_response.text, "html.parser")
-            lyrics_div = lyrics_soup.find("div", class_="lyric-original")
-
-            if not lyrics_div:
-                self.show_info_popup("Letra não encontrada.")
-                return
-
-            lyrics = lyrics_div.get_text(separator="\n", strip=True)
-
-            if lyrics.strip():
-                self.ids.lyrics_input.text = lyrics
-                self.show_info_popup(f"Letra carregada com sucesso!\nTítulo mais próximo encontrado:\n{best_match.get('title')}")
+            data = response.json()
+            if data.get('success'):
+                self.ids.lyrics_input.text = data['lyrics']
+                self.show_info_popup(f"Sucesso na tentativa {attempt}")
             else:
-                self.show_info_popup("Letra encontrada, mas está vazia.")
-
+                raise requests.exceptions.RequestException(data.get('message'))
+                
         except Exception as e:
-            self.show_info_popup(f"Erro inesperado:\n{str(e)}")
+            if attempt < max_attempts:
+                delay = 5 * attempt  # Backoff: 5s, 10s, 15s...
+                Clock.schedule_once(
+                    lambda dt: self.retry_with_backoff(api_url, params, attempt+1),
+                    delay
+                )
+                self.show_info_popup(f"Tentando novamente em {delay} segundos...")
+            else:
+                self.show_info_popup("Servidor indisponível. Tente mais tarde.")
+
+    def handle_network_error(self, error):
+        """Tratamento especializado de erros"""
+        error_messages = {
+            requests.exceptions.Timeout: "Tempo de conexão esgotado",
+            requests.exceptions.ConnectionError: "Sem conexão com a internet",
+            requests.exceptions.RequestException: "Erro na requisição"
+        }
+        
+        msg = error_messages.get(type(error), "Erro desconhecido")
+        self.show_info_popup(f"{msg}. Detalhes: {str(error)}")
 
     def reset_all_fields(self):
         """Reseta todos os campos do projeto para os valores padrão"""
