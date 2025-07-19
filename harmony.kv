@@ -24,34 +24,6 @@
             pos: self.pos
             size: self.size
 
-    # Header com título do app - Melhorado
-    BoxLayout:
-        size_hint_y: None
-        height: dp(80)
-        padding: dp(20), dp(15)
-        canvas.before:
-            Color:
-                rgba: 0.92, 0.92, 0.92, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
-            Color:
-                rgba: 0, 0, 0, 0.08
-            Rectangle:
-                pos: self.x, self.y - dp(2)
-                size: self.width, dp(2)
-
-        Label:
-            text: "🎵 HARMONAUTA"
-            font_size: '26sp'
-            #font_name: 'Arial'
-            bold: True
-            color: 0.15, 0.15, 0.15, 1
-            halign: 'left'
-            valign: 'middle'
-            text_size: self.size
-            padding_x: dp(10)
-
     ScrollView:
         size_hint: (1, 1)
         do_scroll_x: False
@@ -88,11 +60,10 @@
                 padding: [dp(20), dp(20), dp(20), dp(20)]
 
                 Label:
-                    text: "📋 INFORMAÇÕES DO PROJETO"
+                    text: "INFORMAÇÕES DO PROJETO"
                     size_hint_y: None
                     height: dp(40)
                     font_size: '20sp'
-                    #font_name: 'Arial'
                     bold: True
                     color: 0.2, 0.2, 0.2, 1
                     halign: 'left'
@@ -173,11 +144,10 @@
                 spacing: dp(15)
 
                 Label:
-                    text: "⚡ AÇÕES RÁPIDAS"
+                    text: "AÇÕES RÁPIDAS"
                     size_hint_y: None
                     height: dp(40)
                     font_size: '20sp'
-                    #font_name: 'Arial'
                     bold: True
                     color: 0.2, 0.2, 0.2, 1
                     halign: 'left'
@@ -192,9 +162,8 @@
                     height: dp(120)
 
                     Button:
-                        text: "💾 SALVAR"
+                        text: "SALVAR"
                         font_size: '17sp'
-                        #font_name: 'Arial'
                         background_normal: ''
                         background_color: 0.2, 0.75, 0.45, 1
                         color: 1, 1, 1, 1
@@ -209,9 +178,8 @@
                                 radius: [dp(10), dp(10), dp(10), dp(10)]
 
                     Button:
-                        text: "📂 CARREGAR"
+                        text: "CARREGAR"
                         font_size: '17sp'
-                        #font_name: 'Arial'
                         background_normal: ''
                         background_color: 0.1, 0.55, 0.85, 1
                         color: 1, 1, 1, 1
@@ -226,9 +194,8 @@
                                 radius: [dp(10), dp(10), dp(10), dp(10)]
 
                     Button:
-                        text: "🔄 RESETAR"
+                        text: "RESETAR"
                         font_size: '17sp'
-                        #font_name: 'Arial'
                         background_normal: ''
                         background_color: 0.95, 0.35, 0.35, 1
                         color: 1, 1, 1, 1
@@ -243,9 +210,8 @@
                                 radius: [dp(10), dp(10), dp(10), dp(10)]
                     
                     Button:
-                        text: "🔍 BUSCAR LETRA"
+                        text: "BUSCAR LETRA"
                         font_size: '16sp'
-                        #font_name: 'Arial'
                         background_normal: ''
                         background_color: 0.95, 0.65, 0.25, 1
                         color: 1, 1, 1, 1
@@ -263,7 +229,7 @@
             BoxLayout:
                 orientation: 'vertical'
                 size_hint_y: None
-                height: dp(500)
+                height: self.minimum_height # Ajustado para se adaptar ao conteúdo
                 canvas.before:
                     Color:
                         rgba: 1, 1, 1, 1
@@ -280,11 +246,10 @@
                 spacing: dp(15)
 
                 Label:
-                    text: "✏️ EDITOR DE CIFRAS"
+                    text: "EDITOR DE CIFRAS"
                     size_hint_y: None
                     height: dp(40)
                     font_size: '20sp'
-                    #font_name: 'Arial'
                     bold: True
                     color: 0.2, 0.2, 0.2, 1
                     halign: 'left'
@@ -292,21 +257,24 @@
                     text_size: self.width, None
 
                 BoxLayout:
-                    orientation: 'horizontal'
+                    orientation: 'vertical'
                     spacing: dp(15)
+                    size_hint_y: None
+                    height: self.minimum_height # Ajusta a altura automaticamente
 
-                    # Área de texto principal (60%)
+                    # Área de texto principal (100% horizontal)
                     BoxLayout:
                         orientation: 'vertical'
-                        size_hint_x: 0.6
+                        size_hint_x: 1
                         spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(300) # Altura fixa para a área de texto
 
                         Label:
-                            text: "📝 Letra com acordes"
+                            text: "Letra com acordes"
                             size_hint_y: None
                             height: dp(35)
                             font_size: '16sp'
-                            #font_name: 'Arial'
                             color: 0.4, 0.4, 0.4, 1
                             halign: 'left'
                             valign: 'middle'
@@ -329,21 +297,22 @@
                                 size_hint_y: None
                                 height: max(self.parent.height, self.minimum_height)
                                 font_size: '17sp'
-                                #font_name: 'Arial'
                                 multiline: True
                                 padding: [dp(15), dp(15), dp(15), dp(15)]
                                 background_color: 0.96, 0.96, 0.96, 1
-                                foreground_color: 0, 0, 0, 1  # Alterado para preto
-                                hint_text_color: 0.3, 0.3, 0.3, 1  # Alterado para branco
+                                foreground_color: 0, 0, 0, 1
+                                hint_text_color: 0.3, 0.3, 0.3, 1
                                 cursor_color: 0.1, 0.5, 0.8, 1
                                 selection_color: 0.1, 0.5, 0.8, 0.3
                                 on_text: root.on_text_change(*args)
 
-                    # Painel de controles (40%)
+                    # Painel de controles (100% horizontal)
                     BoxLayout:
                         orientation: 'vertical'
-                        size_hint_x: 0.4
+                        size_hint_x: 1
                         spacing: dp(12)
+                        size_hint_y: None
+                        height: self.minimum_height
                         canvas.before:
                             Color:
                                 rgba: 0.97, 0.97, 0.97, 1
@@ -354,11 +323,10 @@
                         padding: [dp(15), dp(15), dp(15), dp(15)]
 
                         Label:
-                            text: "🎼 Inserir Acorde"
+                            text: "Inserir Acorde"
                             size_hint_y: None
                             height: dp(40)
                             font_size: '18sp'
-                            #font_name: 'Arial'
                             bold: True
                             color: 0.2, 0.2, 0.2, 1
                             halign: 'center'
@@ -373,11 +341,10 @@
                             spacing: dp(8)
 
                             Label:
-                                text: "🎵 Acorde"
+                                text: "Acorde"
                                 size_hint_y: None
                                 height: dp(30)
                                 font_size: '15sp'
-                                #font_name: 'Arial'
                                 color: 0.4, 0.4, 0.4, 1
                                 halign: 'left'
                                 valign: 'middle'
@@ -387,14 +354,13 @@
                                 id: chord_input
                                 hint_text: "Ex: Am, C7, Dm/F"
                                 font_size: '17sp'
-                                #font_name: 'Arial'
                                 multiline: False
                                 padding: [dp(15), dp(15), dp(15), dp(15)]
                                 size_hint_y: None
                                 height: dp(50)
                                 background_color: 0.96, 0.96, 0.96, 1
-                                foreground_color: 0, 0, 0, 1  # Alterado para preto
-                                hint_text_color: 0.3, 0.3, 0.3, 1  # Alterado para branco
+                                foreground_color: 0, 0, 0, 1
+                                hint_text_color: 0.3, 0.3, 0.3, 1
                                 cursor_color: 0.1, 0.5, 0.8, 1
                                 selection_color: 0.1, 0.5, 0.8, 0.3
 
@@ -406,11 +372,10 @@
                             spacing: dp(8)
 
                             Label:
-                                text: "📊 Grau Harmônico"
+                                text: "Grau Harmônico"
                                 size_hint_y: None
                                 height: dp(30)
                                 font_size: '15sp'
-                                #font_name: 'Arial'
                                 color: 0.4, 0.4, 0.4, 1
                                 halign: 'left'
                                 valign: 'middle'
@@ -420,14 +385,13 @@
                                 id: degree_input
                                 hint_text: "Ex: I, ii, V7, bVII"
                                 font_size: '17sp'
-                                #font_name: 'Arial'
                                 multiline: False
                                 padding: [dp(15), dp(15), dp(15), dp(15)]
                                 size_hint_y: None
                                 height: dp(50)
                                 background_color: 0.96, 0.96, 0.96, 1
-                                foreground_color: 0, 0, 0, 1  # Alterado para preto
-                                hint_text_color: 0.3, 0.3, 0.3, 1  # Alterado para branco
+                                foreground_color: 0, 0, 0, 1
+                                hint_text_color: 0.3, 0.3, 0.3, 1
                                 cursor_color: 0.1, 0.5, 0.8, 1
                                 selection_color: 0.1, 0.5, 0.8, 0.3
 
@@ -439,11 +403,10 @@
                             spacing: dp(8)
 
                             Label:
-                                text: "💭 Análise Harmônica"
+                                text: "Análise Harmônica"
                                 size_hint_y: None
                                 height: dp(30)
                                 font_size: '15sp'
-                                #font_name: 'Arial'
                                 color: 0.4, 0.4, 0.4, 1
                                 halign: 'left'
                                 valign: 'middle'
@@ -453,14 +416,13 @@
                                 id: comment_input
                                 hint_text: "Função harmônica, movimento melódico, contexto na progressão..."
                                 font_size: '16sp'
-                                #font_name: 'Arial'
                                 multiline: True
                                 padding: [dp(15), dp(15), dp(15), dp(15)]
                                 size_hint_y: None
                                 height: dp(100)
                                 background_color: 0.96, 0.96, 0.96, 1
-                                foreground_color: 0, 0, 0, 1  # Alterado para preto
-                                hint_text_color: 0.3, 0.3, 0.3, 1  # Alterado para branco
+                                foreground_color: 0, 0, 0, 1
+                                hint_text_color: 0.3, 0.3, 0.3, 1
                                 cursor_color: 0.1, 0.5, 0.8, 1
                                 selection_color: 0.1, 0.5, 0.8, 0.3
 
@@ -474,7 +436,6 @@
                             Button:
                                 text: "➕ INSERIR"
                                 font_size: '15sp'
-                                #font_name: 'Arial'
                                 background_normal: ''
                                 background_color: 0.1, 0.55, 0.85, 1
                                 color: 1, 1, 1, 1
@@ -489,9 +450,8 @@
                                         radius: [dp(10), dp(10), dp(10), dp(10)]
                             
                             Button:
-                                text: "🗑️ LIMPAR"
+                                text: "LIMPAR"
                                 font_size: '15sp'
-                                #font_name: 'Arial'
                                 background_normal: ''
                                 background_color: 0.95, 0.45, 0.35, 1
                                 color: 1, 1, 1, 1
@@ -509,7 +469,7 @@
             BoxLayout:
                 orientation: 'vertical'
                 size_hint_y: None
-                height: dp(420)
+                height: self.minimum_height # Ajustado para se adaptar ao conteúdo
                 canvas.before:
                     Color:
                         rgba: 1, 1, 1, 1
@@ -526,11 +486,10 @@
                 spacing: dp(15)
 
                 Label:
-                    text: "👀 PRÉ-VISUALIZAÇÃO"
+                    text: "PRÉ-VISUALIZAÇÃO"
                     size_hint_y: None
                     height: dp(40)
                     font_size: '20sp'
-                    #font_name: 'Arial'
                     bold: True
                     color: 0.2, 0.2, 0.2, 1
                     halign: 'left'
@@ -538,21 +497,24 @@
                     text_size: self.width, None
 
                 BoxLayout:
-                    orientation: 'horizontal'
+                    orientation: 'vertical'
                     spacing: dp(15)
+                    size_hint_y: None
+                    height: self.minimum_height # Ajusta a altura automaticamente
 
-                    # Visualização da cifra (60%)
+                    # Visualização da cifra (100% horizontal)
                     BoxLayout:
                         orientation: 'vertical'
-                        size_hint_x: 0.6
+                        size_hint_x: 1
                         spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(300) # Altura fixa para a visualização da cifra
 
                         Label:
-                            text: "🎵 Cifra formatada"
+                            text: "Cifra formatada"
                             size_hint_y: None
                             height: dp(35)
                             font_size: '16sp'
-                            #font_name: 'Arial'
                             color: 0.4, 0.4, 0.4, 1
                             halign: 'left'
                             valign: 'middle'
@@ -575,25 +537,25 @@
                                 size_hint_y: None
                                 height: max(dp(250), self.texture_size[1])
                                 font_size: '17sp'
-                                #font_name: 'Arial'
                                 text_size: self.width - dp(30), None
                                 halign: 'left'
                                 valign: 'top'
                                 padding: [dp(15), dp(15), dp(15), dp(15)]
                                 color: 0.15, 0.15, 0.15, 1
 
-                    # Visualização de metadados (40%)
+                    # Visualização de metadados (100% horizontal)
                     BoxLayout:
                         orientation: 'vertical'
-                        size_hint_x: 0.4
+                        size_hint_x: 1
                         spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(200) # Altura fixa para a visualização da cifra
 
                         Label:
-                            text: "📊 Funções dos acordes"
+                            text: "Funções dos acordes"
                             size_hint_y: None
                             height: dp(35)
                             font_size: '16sp'
-                            #font_name: 'Arial'
                             color: 0.4, 0.4, 0.4, 1
                             halign: 'left'
                             valign: 'middle'
@@ -605,7 +567,7 @@
                             bar_color: 0.1, 0.5, 0.8, 0.7
                             canvas.before:
                                 Color:
-                                    rgba: 0.97, 0.97, 0.97, 1
+                                    rgba: 0.96, 0.96, 0.96, 1
                                 RoundedRectangle:
                                     pos: self.pos
                                     size: self.size
@@ -615,19 +577,18 @@
                                 markup: True
                                 size_hint_y: None
                                 height: max(dp(250), self.texture_size[1])
-                                font_size: '15sp'
-                                #font_name: 'Arial'
-                                text_size: self.width - dp(25), None
+                                font_size: '17sp'
+                                text_size: self.width - dp(30), None
                                 halign: 'left'
                                 valign: 'top'
                                 padding: [dp(15), dp(15), dp(15), dp(15)]
-                                color: 0.2, 0.2, 0.2, 1
+                                color: 0.15, 0.15, 0.15, 1
 
             # Card combinado - Melhorado
             BoxLayout:
-                orientation: 'horizontal'
+                orientation: 'vertical'
                 size_hint_y: None
-                height: dp(450)
+                height: self.minimum_height # Ajustado para se adaptar ao conteúdo
                 spacing: dp(20)
                 canvas.before:
                     Color:
@@ -643,18 +604,19 @@
                         width: dp(1.5)
                 padding: [dp(20), dp(20), dp(20), dp(20)]
 
-                # Lista de acordes (70%)
+                # Lista de acordes (100% horizontal)
                 BoxLayout:
                     orientation: 'vertical'
-                    size_hint_x: 0.7
+                    size_hint_x: 1
                     spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(400) # Altura fixa para a lista de acordes
 
                     Label:
-                        text: "🎼 LISTA DE ACORDES"
+                        text: "LISTA DE ACORDES"
                         size_hint_y: None
                         height: dp(40)
                         font_size: '18sp'
-                        #font_name: 'Arial'
                         bold: True
                         color: 0.2, 0.2, 0.2, 1
                         halign: 'left'
@@ -681,113 +643,79 @@
                             spacing: dp(12)
                             padding: [dp(15), dp(15), dp(15), dp(15)]
 
-                # Painel integrado (30%)
-                BoxLayout:
-                    orientation: 'vertical'
-                    size_hint_x: 0.3
-                    spacing: dp(15)
-
-                    Label:
-                        text: "🔧 CONTROLES"
-                        size_hint_y: None
-                        height: dp(40)
-                        font_size: '17sp'
-                        #font_name: 'Arial'
-                        bold: True
-                        color: 0.2, 0.2, 0.2, 1
-                        halign: 'left'
-                        valign: 'middle'
-                        text_size: self.width, None
-
+                                    # Painel integrado (100% horizontal)
                     BoxLayout:
                         orientation: 'vertical'
+                        size_hint_x: 1
                         spacing: dp(15)
-                        canvas.before:
-                            Color:
-                                rgba: 0.97, 0.97, 0.97, 1
-                            RoundedRectangle:
-                                pos: self.pos
-                                size: self.size
-                                radius: [dp(12), dp(12), dp(12), dp(12)]
-                        padding: [dp(15), dp(15), dp(15), dp(15)]
+                        size_hint_y: None
+                        height: self.minimum_height
 
-                        # Seção do Acorde Selecionado
                         BoxLayout:
                             orientation: 'vertical'
-                            size_hint_y: 0.4
-                            spacing: dp(10)
+                            spacing: dp(15)
+                            canvas.before:
+                                Color:
+                                    rgba: 0.97, 0.97, 0.97, 1
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [dp(12), dp(12), dp(12), dp(12)]
+                            padding: [dp(15), dp(15), dp(15), dp(15)]
 
-                            Label:
-                                text: "🎯 Acorde Selecionado"
+                            # Seção do Acorde Selecionado - Modificada para layout horizontal
+                            BoxLayout:
+                                orientation: 'horizontal'
                                 size_hint_y: None
-                                height: dp(35)
-                                font_size: '15sp'
-                                #font_name: 'Arial'
-                                bold: True
-                                color: 0.3, 0.3, 0.3, 1
-                                halign: 'left'
-                                valign: 'middle'
-                                text_size: self.width, None
+                                height: dp(80)  # Altura fixa para a linha
+                                spacing: dp(15)
 
-                            ScrollView:
-                                scroll_type: ['bars', 'content']
-                                bar_width: dp(8)
-                                bar_color: 0.1, 0.5, 0.8, 0.7
-                                canvas.before:
-                                    Color:
-                                        rgba: 0.96, 0.96, 0.96, 1
-                                    RoundedRectangle:
-                                        pos: self.pos
-                                        size: self.size
-                                        radius: [dp(10), dp(10), dp(10), dp(10)]
-                        
-                                Label:
-                                    id: selected_chord_label
-                                    text: "[i]Clique em um acorde da lista para ver detalhes[/i]"
-                                    markup: True
-                                    font_size: '15sp'
-                                    #font_name: 'Arial'
-                                    text_size: self.width - dp(20), None
-                                    size_hint_y: None
-                                    height: max(self.texture_size[1], dp(80))
-                                    halign: 'left'
-                                    valign: 'top'
-                                    padding: [dp(12), dp(12), dp(12), dp(12)]
-                                    color: 0.4, 0.4, 0.4, 1
+                                # Área do acorde selecionado
+                                ScrollView:
+                                    scroll_type: ['bars', 'content']
+                                    bar_width: dp(8)
+                                    bar_color: 0.1, 0.5, 0.8, 0.7
+                                    canvas.before:
+                                        Color:
+                                            rgba: 0.96, 0.96, 0.96, 1
+                                        RoundedRectangle:
+                                            pos: self.pos
+                                            size: self.size
+                                            radius: [dp(10), dp(10), dp(10), dp(10)]
+                            
+                                    Label:
+                                        id: selected_chord_label
+                                        text: "[i]Clique em um acorde da lista para ver detalhes[/i]"
+                                        markup: True
+                                        font_size: '15sp'
+                                        text_size: self.width - dp(20), None
+                                        size_hint_y: None
+                                        height: max(self.texture_size[1], dp(80))
+                                        halign: 'left'
+                                        valign: 'center'  # Alterado para center para melhor alinhamento
+                                        padding: [dp(12), dp(12), dp(12), dp(12)]
+                                        color: 0.4, 0.4, 0.4, 1
 
-                        # Seção dos Controles de Metadados
-                        BoxLayout:
-                            orientation: 'vertical'
-                            size_hint_y: 0.6
-                            spacing: dp(12)
+                    # Seção dos Controles de Metadados
+                    BoxLayout:
+                        orientation: 'vertical'
+                        size_hint_y: None
+                        height: dp(60)  # Altura fixa suficiente
 
-                            Label:
-                                text: "⚙️ Metadados de acordes"
-                                size_hint_y: None
-                                height: dp(35)
-                                font_size: '15sp'
-                                #font_name: 'Arial'
-                                bold: True
-                                color: 0.3, 0.3, 0.3, 1
-                                halign: 'left'
-                                valign: 'middle'
-                                text_size: self.width, None
-
-                            Button:
-                                text: "🔄 ATUALIZAR"
-                                font_size: '15sp'
-                                #font_name: 'Arial'
-                                background_normal: ''
-                                background_color: 0.2, 0.75, 0.45, 1
-                                color: 1, 1, 1, 1
-                                bold: True
-                                size_hint_y: None
-                                height: dp(60)
-                                on_release: root.update_metadata()
-                                canvas.before:
-                                    Color:
-                                        rgba: self.background_color
-                                    RoundedRectangle:
-                                        pos: self.pos
-                                        size: self.size
-                                        radius: [dp(10), dp(10), dp(10), dp(10)]
+                        Button:
+                            text: "ATUALIZAR METADADOS DO ACORDE"
+                            font_size: '15sp'
+                            background_normal: ''
+                            background_color: 0.2, 0.75, 0.45, 1
+                            color: 1, 1, 1, 1
+                            bold: True
+                            size_hint_y: None
+                            height: dp(60)
+                            on_release: root.update_metadata()
+                            canvas.before:
+                                Color:
+                                    rgba: self.background_color
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [dp(10), dp(10), dp(10), dp(10)]
