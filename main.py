@@ -46,7 +46,7 @@ class SplashScreen(FloatLayout):
             size=(min(Window.width, Window.height) * 0.7, 
                 min(Window.width, Window.height) * 0.7),
             pos_hint={'center_x': 0.5},
-            allow_stretch=False,  # Substitui o keep_ratio
+            fit_mode='contain', # ← Opcional (padrão é 'contain')
             keep_data=False       # Novo parâmetro recomendado
         )
         
@@ -614,8 +614,8 @@ class HarmonyScreen(BoxLayout):
 
         try:
             headers = {
-                "User-Agent": "Mozilla/5.0",
-                "Accept-Language": "pt-BR,pt;q=0.9"
+            "User-Agent": "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
+            "Accept-Language": "pt-BR"
             }
 
             # Processar o nome do artista para a URL
