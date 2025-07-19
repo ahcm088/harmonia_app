@@ -16,14 +16,13 @@ from kivy.uix.filechooser import FileChooserIconView
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 import requests
-from bs4 import BeautifulSoup
-from difflib import SequenceMatcher
 from kivy.utils import platform
 from kivy.graphics import Color, Rectangle  # Para o fundo colorido
 from kivy.uix.progressbar import ProgressBar  # Para a barra de progresso
 from kivy.animation import Animation  # Para animar a barra de progresso
 from kivy.resources import resource_add_path
 import os
+import certifi
 
 resource_add_path(os.path.join(os.path.dirname(__file__), 'assets'))
 
@@ -616,7 +615,6 @@ class HarmonyScreen(BoxLayout):
         
         try:
             # Configuração segura com certificados atualizados
-            import certifi
             session = requests.Session()
             session.verify = certifi.where()  # Usa certificados confiáveis
             
@@ -653,7 +651,6 @@ class HarmonyScreen(BoxLayout):
     def retry_with_backoff(self, api_url, params, attempt=1, max_attempts=3):
         """Tentativas com backoff exponencial"""
         try:
-            import certifi
             response = requests.get(
                 api_url,
                 params=params,
