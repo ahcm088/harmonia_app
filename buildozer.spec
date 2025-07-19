@@ -5,7 +5,7 @@ package.domain = org.harmonauta
 source.dir = .
 source.include_exts = py,kv,png,jpg,ttf
 version = 1.0
-requirements = python3,kivy==2.2.1,requests,beautifulsoup4,typing_extensions,soupsieve
+requirements = python3,kivy==2.2.1,requests,beautifulsoup4,typing_extensions,soupsieve,urllib3,pyopenssl,certifi,chardet,idna
 orientation = portrait
 fullscreen = 1
 
@@ -44,4 +44,4 @@ p4a.branch = master
 p4a.recommended_ndk_version = 25b
 p4a.bootstrap = sdl2
 
-android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,INTERNET
+android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,INTERNET,ACCESS_NETWORK_STATE,ACCESS_WIFI_STATE

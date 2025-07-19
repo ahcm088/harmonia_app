@@ -613,9 +613,17 @@ class HarmonyScreen(BoxLayout):
             return
 
         try:
+            # Desativa a verificação SSL
+            import ssl
+            ssl._create_default_https_context = ssl._create_unverified_context
+            
+            # Configura session para ignorar SSL
+            session = requests.Session()
+            session.verify = False
+            
             headers = {
-            "User-Agent": "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
-            "Accept-Language": "pt-BR"
+                "User-Agent": "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
+                "Accept-Language": "pt-BR"
             }
 
             # Processar o nome do artista para a URL
@@ -643,7 +651,7 @@ class HarmonyScreen(BoxLayout):
             response = None
             for url in artist_urls:
                 try:
-                    response = requests.get(url, headers=headers, timeout=10)
+                    response = session.get(url, headers=headers, timeout=10)
                     if response.status_code == 200:
                         artist_url = url
                         break
@@ -679,7 +687,7 @@ class HarmonyScreen(BoxLayout):
                 return
 
             lyrics_url = "https://www.letras.com" + best_match["href"]
-            lyrics_response = requests.get(lyrics_url, headers=headers)
+            lyrics_response = session.get(lyrics_url, headers=headers, timeout=10)
 
             if lyrics_response.status_code != 200:
                 self.show_info_popup("Erro ao acessar a página da música.")
