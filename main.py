@@ -25,6 +25,8 @@ from kivy.resources import resource_add_path
 
 if platform == "android":
     from androidstorage4kivy import SharedStorage, Chooser
+    from android.permissions import request_permissions, Permission
+    request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
 
 resource_add_path(os.path.join(os.path.dirname(__file__), 'assets'))
 
@@ -114,14 +116,18 @@ class HarmonyScreen(BoxLayout):
                 self.last_used_dir = self.default_dir
                 Path(self.default_dir).mkdir(parents=True, exist_ok=True)
 
-    def chooser_callback(self, shared_storage_path):
+    def chooser_callback(self, uri_list):
         """Callback para o Android file chooser"""
-        if hasattr(self, '_pending_load_callback'):
-            # Carregar arquivo
-            try:
-                with open(shared_storage_path, "r", encoding="utf-8") as f:
+        try:
+            for uri in uri_list:
+                # Copia do armazenamento compartilhado para o privado
+                private_file = self.shared_storage.copy_from_shared(uri)
+                
+                # Carrega o arquivo
+                with open(private_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 
+                # Atualiza a interface
                 self.ids.project_title_input.text = data.get("title", "Sem título")
                 self.ids.project_key_input.text = data.get("key", "")
                 self.ids.project_description_input.text = data.get("description", "")
@@ -132,23 +138,11 @@ class HarmonyScreen(BoxLayout):
                 self.ids.selected_chord_label.text = "[i]Nenhum acorde selecionado[/i]"
                 self.parse_chords()
                 self.show_info_popup("Projeto carregado com sucesso!")
-            except json.JSONDecodeError:
-                self.show_info_popup("Erro: O arquivo não é um projeto válido")
-            except Exception as e:
-                self.show_info_popup(f"Erro ao carregar:\n{str(e)}")
-            finally:
-                delattr(self, '_pending_load_callback')
-        
-        elif hasattr(self, '_pending_save_data'):
-            # Salvar arquivo
-            try:
-                with open(shared_storage_path, "w", encoding="utf-8") as f:
-                    json.dump(self._pending_save_data, f, indent=2, ensure_ascii=False)
-                self.show_info_popup(f"Projeto salvo com sucesso!")
-            except Exception as e:
-                self.show_info_popup(f"Erro ao salvar:\n{str(e)}")
-            finally:
-                delattr(self, '_pending_save_data')
+                
+        except json.JSONDecodeError:
+            self.show_info_popup("Erro: O arquivo não é um projeto válido")
+        except Exception as e:
+            self.show_info_popup(f"Erro ao carregar:\n{str(e)}")
 
     def on_text_change(self, instance, value):
         """Chamado quando o texto da cifra é alterado"""
@@ -540,13 +534,20 @@ class HarmonyScreen(BoxLayout):
         ) + ".harmonia.json"
 
         if platform == "android":
-            # Android: usar SharedStorage
-            self._pending_save_data = data
-            self.shared_storage.save_to(
-                callback=self.chooser_callback,
-                defaultpath=self.default_dir,
-                filename=default_filename
-            )
+            # Android: usar SharedStorage corretamente conforme o exemplo
+            try:
+                # Primeiro salvar no armazenamento privado
+                cache_dir = self.shared_storage.get_cache_dir()
+                private_file = os.path.join(cache_dir, default_filename)
+                
+                with open(private_file, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                
+                # Depois copiar para o armazenamento compartilhado
+                self.shared_storage.copy_to_shared(private_file=private_file)
+                self.show_info_popup("Projeto salvo com sucesso nos Documentos!")
+            except Exception as e:
+                self.show_info_popup(f"Erro ao salvar:\n{str(e)}")
         else:
             # Desktop: manter implementação existente
             def write_to_path(folder_path):
@@ -564,12 +565,9 @@ class HarmonyScreen(BoxLayout):
 
     def load_project(self):
         if platform == "android":
-            # Android: usar SharedStorage
+            # Android: usar Chooser conforme o exemplo
             self._pending_load_callback = True
-            self.shared_storage.load_from(
-                callback=self.chooser_callback,
-                defaultpath=self.default_dir
-            )
+            self.chooser.choose_content("application/json")  # ou "*/*" para qualquer arquivo
         else:
             # Desktop: manter implementação existente
             def load_from_file(path):
@@ -595,7 +593,7 @@ class HarmonyScreen(BoxLayout):
 
             initial_path = self.last_used_dir if Path(self.last_used_dir).exists() else self.default_dir
             self.show_file_chooser(load_from_file, save=False, initial_path=initial_path)
-    
+            
     def show_directory_chooser(self, callback, initial_path=None):
         # Fecha popup anterior
         if self.current_popup:
