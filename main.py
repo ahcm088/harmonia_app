@@ -25,7 +25,6 @@ import os
 import certifi
 from threading import Thread
 import socket
-import ssl
 
 resource_add_path(os.path.join(os.path.dirname(__file__), 'assets'))
 
@@ -778,16 +777,16 @@ class HarmonyScreen(BoxLayout):
             if data.get('success'):
                 self.ids.lyrics_input.text = data.get('lyrics', '')
                 found_title = data.get('title', original_title)
-                self.show_info_popup(f"✅ Letra carregada!\nTítulo: {found_title}")
+                self.show_info_popup(f"Letra carregada!\nTítulo: {found_title}")
                 
                 # Atualiza o título se encontrou um diferente
                 if found_title != original_title:
                     self.ids.project_title_input.text = found_title
                     
             elif data.get('message'):
-                self.show_info_popup(f"ℹ️ {data['message']}")
+                self.show_info_popup(f"{data['message']}")
             else:
-                self.show_info_popup("❌ Letra não encontrada")
+                self.show_info_popup("Letra não encontrada")
                 
         except Exception as e:
             print(f"[ERROR] Error handling API response: {e}")
@@ -797,7 +796,7 @@ class HarmonyScreen(BoxLayout):
         """Trata timeout com possibilidade de retry"""
         content = BoxLayout(orientation='vertical', spacing=10, padding=10)
         content.add_widget(Label(
-            text="⏱️ Timeout na conexão.\nO servidor pode estar ocupado.\n\nDeseja tentar novamente?"
+            text="Timeout na conexão.\nO servidor pode estar ocupado.\n\nDeseja tentar novamente?"
         ))
         
         btn_layout = BoxLayout(spacing=5, size_hint_y=0.3)
@@ -856,14 +855,14 @@ class HarmonyScreen(BoxLayout):
                 self._retry_request_with_backoff(api_url, params, headers, attempt + 1)
             else:
                 Clock.schedule_once(
-                    lambda dt: self.show_info_popup(f"❌ Falha após {max_attempts} tentativas: {str(e)}"), 0
+                    lambda dt: self.show_info_popup(f"Falha após {max_attempts} tentativas: {str(e)}"), 0
                 )
 
     def _handle_ssl_error(self, error_msg):
         """Trata erros SSL específicos"""
         content = BoxLayout(orientation='vertical', spacing=10, padding=10)
         content.add_widget(Label(
-            text="🔒 Erro de certificado SSL.\n\nIsso pode acontecer em redes corporativas\nou com configurações de segurança rigorosas.\n\nTentar sem verificação SSL? (menos seguro)"
+            text="Erro de certificado SSL.\n\nIsso pode acontecer em redes corporativas\nou com configurações de segurança rigorosas.\n\nTentar sem verificação SSL? (menos seguro)"
         ))
         
         btn_layout = BoxLayout(spacing=5, size_hint_y=0.3)
@@ -913,7 +912,7 @@ class HarmonyScreen(BoxLayout):
             
         except Exception as e:
             Clock.schedule_once(
-                lambda dt: self.show_info_popup(f"❌ Falha mesmo sem SSL: {str(e)}"), 0
+                lambda dt: self.show_info_popup(f"Falha mesmo sem SSL: {str(e)}"), 0
             )
 
     def _handle_server_error(self, status_code):
@@ -926,7 +925,7 @@ class HarmonyScreen(BoxLayout):
         }
         
         message = error_messages.get(status_code, f"Erro do servidor ({status_code})")
-        self.show_info_popup(f"🚫 {message}\n\nO servidor pode estar em manutenção.\nTente novamente em alguns minutos.")
+        self.show_info_popup(f"{message}\n\nO servidor pode estar em manutenção.\nTente novamente em alguns minutos.")
 
 
     def reset_all_fields(self):
