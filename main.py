@@ -23,6 +23,9 @@ from kivy.animation import Animation  # Para animar a barra de progresso
 from kivy.resources import resource_add_path
 import os
 import certifi
+from threading import Thread
+import socket
+import ssl
 
 resource_add_path(os.path.join(os.path.dirname(__file__), 'assets'))
 
@@ -604,6 +607,7 @@ class HarmonyScreen(BoxLayout):
         popup.open()
 
     def fetch_lyrics_from_letras(self):
+        """Versão melhorada com thread separada e melhor tratamento de erros"""
         title = self.ids.project_title_input.text.strip().title()
         artist = self.ids.project_description_input.text.strip()
 
@@ -611,81 +615,319 @@ class HarmonyScreen(BoxLayout):
             self.show_info_popup("Por favor, preencha o título e o compositor.")
             return
 
+        # Mostra feedback visual imediato
+        self.show_info_popup("Buscando letra... Aguarde.")
+        
+        # Executa em thread separada para não travar a UI
+        thread = Thread(target=self._fetch_lyrics_thread, args=(title, artist))
+        thread.daemon = True
+        thread.start()
+
+    def _fetch_lyrics_thread(self, title, artist):
+        """Executa a requisição em thread separada"""
         API_URL = "https://harmonauta-lyrics-api.onrender.com/api/lyrics"
         
         try:
-            # Configuração segura com certificados atualizados
+            print(f"[DEBUG] Iniciando requisição para: {API_URL}")
+            print(f"[DEBUG] Parâmetros: title={title}, artist={artist}")
+            
+            # Teste de conectividade básica
+            self._test_connectivity()
+            
+            # Configuração da sessão com headers otimizados para mobile
             session = requests.Session()
-            session.verify = certifi.where()  # Usa certificados confiáveis
+            
+            # Headers otimizados para Android
+            headers = {
+                'User-Agent': 'HarmonautaApp/1.0 (Android; Mobile)',
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'close',  # Importante para Android
+                'Cache-Control': 'no-cache'
+            }
             
             params = {
                 'title': title,
                 'artist': artist
             }
-
-            # Timeout ajustado para mobile (conexão: 10s, leitura: 30s)
-            response = session.get(API_URL, params=params, timeout=(10, 30))
             
-            # Trata respostas HTTP
+            # Configuração SSL mais robusta
+            ssl_context = self._create_ssl_context()
+            
+            print("[DEBUG] Fazendo requisição...")
+            
+            # Requisição com timeout aumentado para mobile
+            response = session.get(
+                API_URL,
+                params=params,
+                headers=headers,
+                timeout=(15, 45),  # Connect timeout: 15s, Read timeout: 45s
+                verify=ssl_context,
+                stream=False
+            )
+            
+            print(f"[DEBUG] Status code: {response.status_code}")
+            print(f"[DEBUG] Response headers: {dict(response.headers)}")
+            
+            # Tratamento de diferentes status codes
             if response.status_code == 504:  # Gateway Timeout
-                self.retry_with_backoff(API_URL, params)
+                Clock.schedule_once(
+                    lambda dt: self._handle_timeout_retry(API_URL, params, headers), 0
+                )
                 return
-                
-            data = response.json()
-
-            if data.get('success'):
-                self.ids.lyrics_input.text = data['lyrics']
-                found_title = data.get('title', title)
-                self.show_info_popup(f"Letra carregada!\nTítulo: {found_title}")
-            else:
-                self.show_info_popup(data.get('message', 'Letra não encontrada'))
-
-        except requests.exceptions.SSLError as e:
-            self.show_info_popup("Erro de certificado SSL. Atualize o app.")
-            # Log para diagnóstico (remova em produção)
-            print(f"Erro SSL: {str(e)}")
+            elif response.status_code == 429:  # Too Many Requests
+                Clock.schedule_once(
+                    lambda dt: self.show_info_popup("Muitas requisições. Tente em alguns minutos."), 0
+                )
+                return
+            elif response.status_code >= 500:  # Server Error
+                Clock.schedule_once(
+                    lambda dt: self._handle_server_error(response.status_code), 0
+                )
+                return
+            elif response.status_code == 404:
+                Clock.schedule_once(
+                    lambda dt: self.show_info_popup("API não encontrada. Verifique a conexão."), 0
+                )
+                return
             
-        except requests.exceptions.RequestException as e:
-            self.handle_network_error(e)
+            # Tenta fazer parse do JSON
+            try:
+                data = response.json()
+                print(f"[DEBUG] Response data: {data}")
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG] JSON decode error: {e}")
+                print(f"[DEBUG] Raw response: {response.text[:500]}")
+                Clock.schedule_once(
+                    lambda dt: self.show_info_popup("Resposta inválida do servidor."), 0
+                )
+                return
+            
+            # Retorna para a thread principal
+            Clock.schedule_once(
+                lambda dt: self._handle_api_response(data, title), 0
+            )
+            
+        except requests.exceptions.SSLError as e:
+            print(f"[ERROR] SSL Error: {str(e)}")
+            Clock.schedule_once(
+                lambda dt: self._handle_ssl_error(str(e)), 0
+            )
+            
+        except requests.exceptions.ConnectionError as e:
+            print(f"[ERROR] Connection Error: {str(e)}")
+            Clock.schedule_once(
+                lambda dt: self.show_info_popup("Erro de conexão. Verifique sua internet."), 0
+            )
+            
+        except requests.exceptions.Timeout as e:
+            print(f"[ERROR] Timeout Error: {str(e)}")
+            Clock.schedule_once(
+                lambda dt: self.show_info_popup("Timeout na conexão. Tente novamente."), 0
+            )
+            
+        except Exception as e:
+            print(f"[ERROR] Unexpected error: {type(e).__name__}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            Clock.schedule_once(
+                lambda dt: self.show_info_popup(f"Erro inesperado: {str(e)}"), 0
+            )
 
-    def retry_with_backoff(self, api_url, params, attempt=1, max_attempts=3):
-        """Tentativas com backoff exponencial"""
+    def _test_connectivity(self):
+        """Testa conectividade básica antes da requisição"""
         try:
-            response = requests.get(
+            # Testa resolução DNS
+            socket.gethostbyname('harmonauta-lyrics-api.onrender.com')
+            print("[DEBUG] DNS resolution successful")
+            
+            # Testa conexão TCP básica
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(10)
+            result = sock.connect_ex(('harmonauta-lyrics-api.onrender.com', 443))
+            sock.close()
+            
+            if result == 0:
+                print("[DEBUG] TCP connection test successful")
+            else:
+                print(f"[WARNING] TCP connection test failed with code: {result}")
+                
+        except socket.gaierror as e:
+            print(f"[ERROR] DNS resolution failed: {e}")
+            raise requests.exceptions.ConnectionError(f"DNS resolution failed: {e}")
+        except Exception as e:
+            print(f"[WARNING] Connectivity test failed: {e}")
+
+    def _create_ssl_context(self):
+        """Cria contexto SSL adequado para Android"""
+        if platform == "android":
+            try:
+                # Para Android, tenta usar certificados do sistema primeiro
+                return True  # Deixa o requests usar o padrão
+            except:
+                # Fallback para certificados do certifi
+                return certifi.where()
+        else:
+            # Para desktop, usa certifi
+            return certifi.where()
+
+    def _handle_api_response(self, data, original_title):
+        """Processa a resposta da API na thread principal"""
+        try:
+            if data.get('success'):
+                self.ids.lyrics_input.text = data.get('lyrics', '')
+                found_title = data.get('title', original_title)
+                self.show_info_popup(f"✅ Letra carregada!\nTítulo: {found_title}")
+                
+                # Atualiza o título se encontrou um diferente
+                if found_title != original_title:
+                    self.ids.project_title_input.text = found_title
+                    
+            elif data.get('message'):
+                self.show_info_popup(f"ℹ️ {data['message']}")
+            else:
+                self.show_info_popup("❌ Letra não encontrada")
+                
+        except Exception as e:
+            print(f"[ERROR] Error handling API response: {e}")
+            self.show_info_popup("Erro ao processar resposta da API")
+
+    def _handle_timeout_retry(self, api_url, params, headers):
+        """Trata timeout com possibilidade de retry"""
+        content = BoxLayout(orientation='vertical', spacing=10, padding=10)
+        content.add_widget(Label(
+            text="⏱️ Timeout na conexão.\nO servidor pode estar ocupado.\n\nDeseja tentar novamente?"
+        ))
+        
+        btn_layout = BoxLayout(spacing=5, size_hint_y=0.3)
+        btn_retry = Button(text="Tentar Novamente", background_color=(0.2, 0.6, 0.35, 1))
+        btn_cancel = Button(text="Cancelar", background_color=(0.8, 0.3, 0.3, 1))
+        btn_layout.add_widget(btn_cancel)
+        btn_layout.add_widget(btn_retry)
+        
+        content.add_widget(btn_layout)
+        
+        popup = Popup(
+            title="Timeout",
+            content=content,
+            size_hint=(0.8, 0.5)
+        )
+        
+        def retry_request(instance):
+            popup.dismiss()
+            thread = Thread(
+                target=self._retry_request_with_backoff, 
+                args=(api_url, params, headers)
+            )
+            thread.daemon = True
+            thread.start()
+            
+        btn_retry.bind(on_press=retry_request)
+        btn_cancel.bind(on_press=popup.dismiss)
+        popup.open()
+
+    def _retry_request_with_backoff(self, api_url, params, headers, attempt=1, max_attempts=3):
+        """Retry com backoff exponencial"""
+        try:
+            import time
+            if attempt > 1:
+                delay = min(5 * attempt, 30)  # Max 30 segundos
+                print(f"[DEBUG] Waiting {delay}s before retry attempt {attempt}")
+                time.sleep(delay)
+                
+            session = requests.Session()
+            response = session.get(
                 api_url,
                 params=params,
-                verify=certifi.where(),
-                timeout=(10, 30)
+                headers=headers,
+                timeout=(20, 60),  # Timeout maior no retry
+                verify=self._create_ssl_context(),
+                stream=False
             )
             
             data = response.json()
-            if data.get('success'):
-                self.ids.lyrics_input.text = data['lyrics']
-                self.show_info_popup(f"Sucesso na tentativa {attempt}")
-            else:
-                raise requests.exceptions.RequestException(data.get('message'))
-                
+            Clock.schedule_once(
+                lambda dt: self._handle_api_response(data, params.get('title', '')), 0
+            )
+            
         except Exception as e:
             if attempt < max_attempts:
-                delay = 5 * attempt  # Backoff: 5s, 10s, 15s...
-                Clock.schedule_once(
-                    lambda dt: self.retry_with_backoff(api_url, params, attempt+1),
-                    delay
-                )
-                self.show_info_popup(f"Tentando novamente em {delay} segundos...")
+                self._retry_request_with_backoff(api_url, params, headers, attempt + 1)
             else:
-                self.show_info_popup("Servidor indisponível. Tente mais tarde.")
+                Clock.schedule_once(
+                    lambda dt: self.show_info_popup(f"❌ Falha após {max_attempts} tentativas: {str(e)}"), 0
+                )
 
-    def handle_network_error(self, error):
-        """Tratamento especializado de erros"""
+    def _handle_ssl_error(self, error_msg):
+        """Trata erros SSL específicos"""
+        content = BoxLayout(orientation='vertical', spacing=10, padding=10)
+        content.add_widget(Label(
+            text="🔒 Erro de certificado SSL.\n\nIsso pode acontecer em redes corporativas\nou com configurações de segurança rigorosas.\n\nTentar sem verificação SSL? (menos seguro)"
+        ))
+        
+        btn_layout = BoxLayout(spacing=5, size_hint_y=0.3)
+        btn_unsafe = Button(text="Tentar (Inseguro)", background_color=(0.8, 0.6, 0.2, 1))
+        btn_cancel = Button(text="Cancelar", background_color=(0.8, 0.3, 0.3, 1))
+        btn_layout.add_widget(btn_cancel)
+        btn_layout.add_widget(btn_unsafe)
+        
+        content.add_widget(btn_layout)
+        
+        popup = Popup(
+            title="Erro SSL",
+            content=content,
+            size_hint=(0.8, 0.6)
+        )
+        
+        def try_unsafe(instance):
+            popup.dismiss()
+            thread = Thread(target=self._unsafe_ssl_request)
+            thread.daemon = True
+            thread.start()
+            
+        btn_unsafe.bind(on_press=try_unsafe)
+        btn_cancel.bind(on_press=popup.dismiss)
+        popup.open()
+
+    def _unsafe_ssl_request(self):
+        """Requisição sem verificação SSL (apenas para casos extremos)"""
+        try:
+            title = self.ids.project_title_input.text.strip().title()
+            artist = self.ids.project_description_input.text.strip()
+            
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            
+            response = requests.get(
+                "https://harmonauta-lyrics-api.onrender.com/api/lyrics",
+                params={'title': title, 'artist': artist},
+                verify=False,  # INSEGURO - apenas para debug
+                timeout=(15, 45)
+            )
+            
+            data = response.json()
+            Clock.schedule_once(
+                lambda dt: self._handle_api_response(data, title), 0
+            )
+            
+        except Exception as e:
+            Clock.schedule_once(
+                lambda dt: self.show_info_popup(f"❌ Falha mesmo sem SSL: {str(e)}"), 0
+            )
+
+    def _handle_server_error(self, status_code):
+        """Trata erros de servidor (5xx)"""
         error_messages = {
-            requests.exceptions.Timeout: "Tempo de conexão esgotado",
-            requests.exceptions.ConnectionError: "Sem conexão com a internet",
-            requests.exceptions.RequestException: "Erro na requisição"
+            500: "Erro interno do servidor",
+            502: "Gateway indisponível",
+            503: "Serviço temporariamente indisponível",
+            504: "Timeout do gateway"
         }
         
-        msg = error_messages.get(type(error), "Erro desconhecido")
-        self.show_info_popup(f"{msg}. Detalhes: {str(error)}")
+        message = error_messages.get(status_code, f"Erro do servidor ({status_code})")
+        self.show_info_popup(f"🚫 {message}\n\nO servidor pode estar em manutenção.\nTente novamente em alguns minutos.")
+
 
     def reset_all_fields(self):
         """Reseta todos os campos do projeto para os valores padrão"""
