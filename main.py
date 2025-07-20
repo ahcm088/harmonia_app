@@ -1,30 +1,30 @@
 import json
 import re
 from pathlib import Path
+import os
+import certifi
+from threading import Thread
+import socket
+import requests
 from kivy.app import App
-from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.image import Image
 from kivy.core.window import Window
 from kivy.clock import Clock
-from kivy.core.image import Image as CoreImage
-from kivy.properties import (DictProperty, StringProperty, 
-                           ListProperty, ObjectProperty)
+from kivy.properties import DictProperty, StringProperty, ListProperty, ObjectProperty
 from kivy.uix.button import Button
 from kivy.uix.filechooser import FileChooserIconView
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
-import requests
 from kivy.utils import platform
 from kivy.graphics import Color, Rectangle  # Para o fundo colorido
 from kivy.uix.progressbar import ProgressBar  # Para a barra de progresso
 from kivy.animation import Animation  # Para animar a barra de progresso
 from kivy.resources import resource_add_path
-import os
-import certifi
-from threading import Thread
-import socket
+
+if platform == "android":
+    from androidstorage4kivy import SharedStorage, Chooser
 
 resource_add_path(os.path.join(os.path.dirname(__file__), 'assets'))
 
@@ -96,24 +96,59 @@ class HarmonyScreen(BoxLayout):
         super().__init__(**kwargs)
         self.bind(chord_positions=self.update_chord_buttons)
         self.setup_default_dirs()
+        self.current_popup = None
 
     def setup_default_dirs(self):
         """Configura os diretórios padrão baseado no sistema operacional"""
         if platform == "android":
-            try:
-                from android.storage import primary_external_storage_path
-                self.default_dir = str(Path(primary_external_storage_path()) / "HarmonyProjects")
-                Path(self.default_dir).mkdir(parents=True, exist_ok=True)
-            except Exception as e:
-                self.default_dir = str(Path.home())
+            # No Android, usar SharedStorage
+            self.shared_storage = SharedStorage()
+            self.chooser = Chooser(self.chooser_callback)
+            self.default_dir = "Documents"  # Pasta Documents
+            self.last_used_dir = "Documents"
         else:
             self.default_dir = str(Path.home() / "Documents" / "HarmonyProjects")
             Path(self.default_dir).mkdir(parents=True, exist_ok=True)
+            
+            if not self.last_used_dir:
+                self.last_used_dir = self.default_dir
+                Path(self.default_dir).mkdir(parents=True, exist_ok=True)
+
+    def chooser_callback(self, shared_storage_path):
+        """Callback para o Android file chooser"""
+        if hasattr(self, '_pending_load_callback'):
+            # Carregar arquivo
+            try:
+                with open(shared_storage_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                
+                self.ids.project_title_input.text = data.get("title", "Sem título")
+                self.ids.project_key_input.text = data.get("key", "")
+                self.ids.project_description_input.text = data.get("description", "")
+                self.ids.lyrics_input.text = data.get("lyrics_text", "")
+                self.chord_metadata = data.get("chord_metadata", {})
+                self.selected_button = None
+                self.selected_occurrence = ""
+                self.ids.selected_chord_label.text = "[i]Nenhum acorde selecionado[/i]"
+                self.parse_chords()
+                self.show_info_popup("Projeto carregado com sucesso!")
+            except json.JSONDecodeError:
+                self.show_info_popup("Erro: O arquivo não é um projeto válido")
+            except Exception as e:
+                self.show_info_popup(f"Erro ao carregar:\n{str(e)}")
+            finally:
+                delattr(self, '_pending_load_callback')
         
-        # Tenta usar o último diretório usado ou cria o padrão
-        if not self.last_used_dir:
-            self.last_used_dir = self.default_dir
-            Path(self.default_dir).mkdir(parents=True, exist_ok=True)
+        elif hasattr(self, '_pending_save_data'):
+            # Salvar arquivo
+            try:
+                with open(shared_storage_path, "w", encoding="utf-8") as f:
+                    json.dump(self._pending_save_data, f, indent=2, ensure_ascii=False)
+                self.show_info_popup(f"Projeto salvo com sucesso!")
+            except Exception as e:
+                self.show_info_popup(f"Erro ao salvar:\n{str(e)}")
+            finally:
+                delattr(self, '_pending_save_data')
 
     def on_text_change(self, instance, value):
         """Chamado quando o texto da cifra é alterado"""
@@ -504,47 +539,69 @@ class HarmonyScreen(BoxLayout):
             data["title"].strip().replace(" ", "_")
         ) + ".harmonia.json"
 
-        def write_to_path(folder_path):
-            try:
-                path = Path(folder_path) / default_filename
-                with open(path, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2, ensure_ascii=False)
-                self.last_used_dir = str(Path(folder_path))
-                self.show_info_popup(f"Projeto salvo com sucesso em:\n{path}")
-            except Exception as e:
-                self.show_info_popup(f"Erro ao salvar:\n{str(e)}")
+        if platform == "android":
+            # Android: usar SharedStorage
+            self._pending_save_data = data
+            self.shared_storage.save_to(
+                callback=self.chooser_callback,
+                defaultpath=self.default_dir,
+                filename=default_filename
+            )
+        else:
+            # Desktop: manter implementação existente
+            def write_to_path(folder_path):
+                try:
+                    path = Path(folder_path) / default_filename
+                    with open(path, "w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=2, ensure_ascii=False)
+                    self.last_used_dir = str(Path(folder_path))
+                    self.show_info_popup(f"Projeto salvo com sucesso em:\n{path}")
+                except Exception as e:
+                    self.show_info_popup(f"Erro ao salvar:\n{str(e)}")
 
-        # Usa o último diretório ou o padrão se não existir
-        initial_path = self.last_used_dir if Path(self.last_used_dir).exists() else self.default_dir
-        self.show_directory_chooser(write_to_path, initial_path=initial_path)
+            initial_path = self.last_used_dir if Path(self.last_used_dir).exists() else self.default_dir
+            self.show_directory_chooser(write_to_path, initial_path=initial_path)
 
     def load_project(self):
-        def load_from_file(path):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                
-                self.ids.project_title_input.text = data.get("title", "Sem título")
-                self.ids.project_key_input.text = data.get("key", "")
-                self.ids.project_description_input.text = data.get("description", "")
-                self.ids.lyrics_input.text = data.get("lyrics_text", "")
-                self.chord_metadata = data.get("chord_metadata", {})
-                self.selected_button = None
-                self.selected_occurrence = ""
-                self.ids.selected_chord_label.text = "[i]Nenhum acorde selecionado[/i]"
-                self.last_used_dir = str(Path(path).parent)
-                self.parse_chords()
-                self.show_info_popup("Projeto carregado com sucesso!")
-            except json.JSONDecodeError:
-                self.show_info_popup("Erro: O arquivo não é um projeto válido")
-            except Exception as e:
-                self.show_info_popup(f"Erro ao carregar:\n{str(e)}")
+        if platform == "android":
+            # Android: usar SharedStorage
+            self._pending_load_callback = True
+            self.shared_storage.load_from(
+                callback=self.chooser_callback,
+                defaultpath=self.default_dir
+            )
+        else:
+            # Desktop: manter implementação existente
+            def load_from_file(path):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    
+                    self.ids.project_title_input.text = data.get("title", "Sem título")
+                    self.ids.project_key_input.text = data.get("key", "")
+                    self.ids.project_description_input.text = data.get("description", "")
+                    self.ids.lyrics_input.text = data.get("lyrics_text", "")
+                    self.chord_metadata = data.get("chord_metadata", {})
+                    self.selected_button = None
+                    self.selected_occurrence = ""
+                    self.ids.selected_chord_label.text = "[i]Nenhum acorde selecionado[/i]"
+                    self.last_used_dir = str(Path(path).parent)
+                    self.parse_chords()
+                    self.show_info_popup("Projeto carregado com sucesso!")
+                except json.JSONDecodeError:
+                    self.show_info_popup("Erro: O arquivo não é um projeto válido")
+                except Exception as e:
+                    self.show_info_popup(f"Erro ao carregar:\n{str(e)}")
 
-        # Usa o último diretório ou o padrão se não existir
-        initial_path = self.last_used_dir if Path(self.last_used_dir).exists() else self.default_dir
-        self.show_file_chooser(load_from_file, save=False, initial_path=initial_path)
-
+            initial_path = self.last_used_dir if Path(self.last_used_dir).exists() else self.default_dir
+            self.show_file_chooser(load_from_file, save=False, initial_path=initial_path)
+    
     def show_directory_chooser(self, callback, initial_path=None):
+        # Fecha popup anterior
+        if self.current_popup:
+            self.current_popup.dismiss()
+            self.current_popup = None
+        
         chooser = FileChooserIconView(
             path=initial_path if initial_path else ".",
             dirselect=True
@@ -555,7 +612,7 @@ class HarmonyScreen(BoxLayout):
         confirm = Button(text="Salvar nesta pasta", size_hint_y=0.1)
         layout.add_widget(confirm)
 
-        popup = Popup(
+        self.current_popup = Popup(
             title="Escolher pasta para salvar",
             content=layout,
             size_hint=(0.9, 0.9)
@@ -563,13 +620,23 @@ class HarmonyScreen(BoxLayout):
 
         def _confirm(*args):
             if chooser.selection:
-                popup.dismiss()
+                self.current_popup.dismiss()
                 callback(chooser.selection[0])
 
+        def on_dismiss(instance):
+            if self.current_popup == instance:
+                self.current_popup = None
+
         confirm.bind(on_press=_confirm)
-        popup.open()
+        self.current_popup.bind(on_dismiss=on_dismiss)
+        self.current_popup.open()
 
     def show_file_chooser(self, callback, save=False, initial_path=None):
+        # Fecha popup anterior
+        if self.current_popup:
+            self.current_popup.dismiss()
+            self.current_popup = None
+        
         chooser = FileChooserIconView(
             path=initial_path if initial_path else ".",
             filters=["*.harmonia.json", "*.json"]
@@ -583,7 +650,7 @@ class HarmonyScreen(BoxLayout):
         )
         layout.add_widget(confirm)
 
-        popup = Popup(
+        self.current_popup = Popup(
             title="Salvar projeto" if save else "Carregar projeto",
             content=layout,
             size_hint=(0.9, 0.9)
@@ -591,19 +658,37 @@ class HarmonyScreen(BoxLayout):
 
         def _confirm(*args):
             if chooser.selection:
-                popup.dismiss()
+                self.current_popup.dismiss()
                 callback(chooser.selection[0])
 
+        def on_dismiss(instance):
+            if self.current_popup == instance:
+                self.current_popup = None
+
         confirm.bind(on_press=_confirm)
-        popup.open()
+        self.current_popup.bind(on_dismiss=on_dismiss)
+        self.current_popup.open()
 
     def show_info_popup(self, message):
-        popup = Popup(
+        # Fecha o popup anterior se existir
+        if self.current_popup:
+            self.current_popup.dismiss()
+            self.current_popup = None
+        
+        # Cria o novo popup
+        self.current_popup = Popup(
             title="Informação",
             content=Label(text=message),
             size_hint=(0.7, 0.5)
         )
-        popup.open()
+        
+        # Callback para limpar a referência quando o popup for fechado
+        def on_dismiss(instance):
+            if self.current_popup == instance:
+                self.current_popup = None
+        
+        self.current_popup.bind(on_dismiss=on_dismiss)
+        self.current_popup.open()
 
     def fetch_lyrics_from_letras(self):
         """Versão melhorada com thread separada e melhor tratamento de erros"""
@@ -802,6 +887,11 @@ class HarmonyScreen(BoxLayout):
 
     def _handle_timeout_retry(self, api_url, params, headers):
         """Trata timeout com possibilidade de retry"""
+        # Fecha popup anterior
+        if self.current_popup:
+            self.current_popup.dismiss()
+            self.current_popup = None
+        
         content = BoxLayout(orientation='vertical', spacing=10, padding=10)
         content.add_widget(Label(
             text="Timeout na conexão.\nO servidor pode estar ocupado.\n\nDeseja tentar novamente?"
@@ -815,24 +905,29 @@ class HarmonyScreen(BoxLayout):
         
         content.add_widget(btn_layout)
         
-        popup = Popup(
+        self.current_popup = Popup(
             title="Timeout",
             content=content,
             size_hint=(0.8, 0.5)
         )
         
         def retry_request(instance):
-            popup.dismiss()
+            self.current_popup.dismiss()
             thread = Thread(
                 target=self._retry_request_with_backoff, 
                 args=(api_url, params, headers)
             )
             thread.daemon = True
             thread.start()
+
+        def on_dismiss(instance):
+            if self.current_popup == instance:
+                self.current_popup = None
             
         btn_retry.bind(on_press=retry_request)
-        btn_cancel.bind(on_press=popup.dismiss)
-        popup.open()
+        btn_cancel.bind(on_press=self.current_popup.dismiss)
+        self.current_popup.bind(on_dismiss=on_dismiss)
+        self.current_popup.open()
 
     def _retry_request_with_backoff(self, api_url, params, headers, attempt=1, max_attempts=3):
         """Retry com backoff exponencial"""
@@ -868,6 +963,11 @@ class HarmonyScreen(BoxLayout):
 
     def _handle_ssl_error(self, error_msg):
         """Trata erros SSL específicos"""
+        # Fecha popup anterior
+        if self.current_popup:
+            self.current_popup.dismiss()
+            self.current_popup = None
+        
         content = BoxLayout(orientation='vertical', spacing=10, padding=10)
         content.add_widget(Label(
             text="Erro de certificado SSL.\n\nIsso pode acontecer em redes corporativas\nou com configurações de segurança rigorosas.\n\nTentar sem verificação SSL? (menos seguro)"
@@ -881,21 +981,26 @@ class HarmonyScreen(BoxLayout):
         
         content.add_widget(btn_layout)
         
-        popup = Popup(
+        self.current_popup = Popup(
             title="Erro SSL",
             content=content,
             size_hint=(0.8, 0.6)
         )
         
         def try_unsafe(instance):
-            popup.dismiss()
+            self.current_popup.dismiss()
             thread = Thread(target=self._unsafe_ssl_request)
             thread.daemon = True
             thread.start()
+
+        def on_dismiss(instance):
+            if self.current_popup == instance:
+                self.current_popup = None
             
         btn_unsafe.bind(on_press=try_unsafe)
-        btn_cancel.bind(on_press=popup.dismiss)
-        popup.open()
+        btn_cancel.bind(on_press=self.current_popup.dismiss)
+        self.current_popup.bind(on_dismiss=on_dismiss)
+        self.current_popup.open()
 
     def _unsafe_ssl_request(self):
         """Requisição sem verificação SSL (apenas para casos extremos)"""
@@ -935,9 +1040,13 @@ class HarmonyScreen(BoxLayout):
         message = error_messages.get(status_code, f"Erro do servidor ({status_code})")
         self.show_info_popup(f"{message}\n\nO servidor pode estar em manutenção.\nTente novamente em alguns minutos.")
 
-
     def reset_all_fields(self):
         """Reseta todos os campos do projeto para os valores padrão"""
+        # Fecha popup anterior
+        if self.current_popup:
+            self.current_popup.dismiss()
+            self.current_popup = None
+        
         content = BoxLayout(orientation='vertical', spacing=10, padding=10)
         content.add_widget(Label(
             text="Tem certeza que deseja resetar todos os campos?\nTodos os dados não salvos serão perdidos."
@@ -951,7 +1060,7 @@ class HarmonyScreen(BoxLayout):
         
         content.add_widget(btn_layout)
         
-        popup = Popup(
+        self.current_popup = Popup(
             title="Confirmar Reset",
             content=content,
             size_hint=(0.7, 0.4)
@@ -975,13 +1084,17 @@ class HarmonyScreen(BoxLayout):
             self.ids.metadata_preview.text = ""
             self.ids.chord_list.clear_widgets()
             
-            popup.dismiss()
+            self.current_popup.dismiss()
             self.show_info_popup("Todos os campos foram resetados com sucesso!")
+
+        def on_dismiss(instance):
+            if self.current_popup == instance:
+                self.current_popup = None
         
         btn_yes.bind(on_press=confirm_reset)
-        btn_no.bind(on_press=popup.dismiss)
-        
-        popup.open()
+        btn_no.bind(on_press=self.current_popup.dismiss)
+        self.current_popup.bind(on_dismiss=on_dismiss)
+        self.current_popup.open()
 
 class HarmonyApp(App):
     def __init__(self, **kwargs):

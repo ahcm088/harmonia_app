@@ -15,7 +15,7 @@ android.add_resource = assets
 android.resource = assets
 
 # Requisitos Python
-requirements = python3,kivy==2.2.1,requests,certifi
+requirements = python3,kivy==2.2.1,requests,certifi,androidstorage4kivy
 
 # Configurações da aplicação
 orientation = portrait
