@@ -117,32 +117,52 @@ class HarmonyScreen(BoxLayout):
                 Path(self.default_dir).mkdir(parents=True, exist_ok=True)
 
     def chooser_callback(self, uri_list):
-        """Callback para o Android file chooser"""
-        try:
-            for uri in uri_list:
-                # Copia do armazenamento compartilhado para o privado
-                private_file = self.shared_storage.copy_from_shared(uri)
-                
-                # Carrega o arquivo
-                with open(private_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                
-                # Atualiza a interface
-                self.ids.project_title_input.text = data.get("title", "Sem título")
-                self.ids.project_key_input.text = data.get("key", "")
-                self.ids.project_description_input.text = data.get("description", "")
-                self.ids.lyrics_input.text = data.get("lyrics_text", "")
-                self.chord_metadata = data.get("chord_metadata", {})
-                self.selected_button = None
-                self.selected_occurrence = ""
-                self.ids.selected_chord_label.text = "[i]Nenhum acorde selecionado[/i]"
-                self.parse_chords()
-                self.show_info_popup("Projeto carregado com sucesso!")
-                
-        except json.JSONDecodeError:
-            self.show_info_popup("Erro: O arquivo não é um projeto válido")
-        except Exception as e:
-            self.show_info_popup(f"Erro ao carregar:\n{str(e)}")
+        """Callback para o Android file chooser - deve rodar na thread principal"""
+        if not hasattr(self, 'shared_storage'):
+            self.show_info_popup("Erro: Armazenamento não inicializado")
+            return
+            
+        if not uri_list:
+            self.show_info_popup("Nenhum arquivo selecionado")
+            return
+        
+        def _process_uris(dt):
+            try:
+                if not uri_list:
+                    self.show_info_popup("Nenhum arquivo selecionado")
+                    return
+
+                for uri in uri_list:
+                    # Copia do armazenamento compartilhado para o privado
+                    private_file = self.shared_storage.copy_from_shared(uri)
+                    
+                    # Carrega o arquivo na thread principal
+                    with open(private_file, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    
+                    # Atualiza a interface
+                    self.ids.project_title_input.text = data.get("title", "Sem título")
+                    self.ids.project_key_input.text = data.get("key", "")
+                    self.ids.project_description_input.text = data.get("description", "")
+                    self.ids.lyrics_input.text = data.get("lyrics_text", "")
+                    self.chord_metadata = data.get("chord_metadata", {})
+                    self.selected_button = None
+                    self.selected_occurrence = ""
+                    self.ids.selected_chord_label.text = "[i]Nenhum acorde selecionado[/i]"
+                    self.parse_chords()
+                    self.show_info_popup("Projeto carregado com sucesso!")
+                    
+            except json.JSONDecodeError:
+                self.show_info_popup("Erro: O arquivo não é um projeto válido")
+            except Exception as e:
+                self.show_info_popup(f"Erro ao carregar:\n{str(e)}")
+
+        # Agenda o processamento para a thread principal
+        Clock.schedule_once(_process_uris, 0)
+
+        print(f"[DEBUG] URIs recebidas no callback: {uri_list}")
+        if uri_list:
+            print(f"[DEBUG] Primeiro URI: {uri_list[0]}")
 
     def on_text_change(self, instance, value):
         """Chamado quando o texto da cifra é alterado"""
