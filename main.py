@@ -735,28 +735,36 @@ class HarmonyScreen(BoxLayout):
             )
 
     def _test_connectivity(self):
-        """Testa conectividade básica antes da requisição"""
+        """Testa conectividade geral e tenta resolver o domínio"""
         try:
-            # Testa resolução DNS
-            socket.gethostbyname('harmonauta-lyrics-api.onrender.com')
-            print("[DEBUG] DNS resolution successful")
+            print("[DEBUG] Testando conectividade geral com 8.8.8.8:53")
+            socket.create_connection(("8.8.8.8", 53), timeout=5)
+            print("[DEBUG] Conectividade geral OK.")
+        except Exception as e:
+            print(f"[WARNING] Sem conectividade geral: {e}")
+            # Continua mesmo assim, pode ser uma rede interna sem DNS externo
+
+        try:
+            print("[DEBUG] Tentando resolver domínio: harmonauta-lyrics-api.onrender.com")
+            ip = socket.gethostbyname('harmonauta-lyrics-api.onrender.com')
+            print(f"[DEBUG] DNS resolvido com sucesso: {ip}")
             
-            # Testa conexão TCP básica
+            print(f"[DEBUG] Testando conexão TCP com {ip}:443")
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(10)
-            result = sock.connect_ex(('harmonauta-lyrics-api.onrender.com', 443))
+            result = sock.connect_ex((ip, 443))
             sock.close()
-            
+
             if result == 0:
-                print("[DEBUG] TCP connection test successful")
+                print("[DEBUG] Conexão TCP com API bem-sucedida.")
             else:
-                print(f"[WARNING] TCP connection test failed with code: {result}")
-                
+                print(f"[WARNING] Falha na conexão TCP com API (código: {result})")
+
         except socket.gaierror as e:
-            print(f"[ERROR] DNS resolution failed: {e}")
-            raise requests.exceptions.ConnectionError(f"DNS resolution failed: {e}")
+            print(f"[WARNING] Falha na resolução DNS: {e}")
+            # Não impede a requisição, apenas avisa
         except Exception as e:
-            print(f"[WARNING] Connectivity test failed: {e}")
+            print(f"[WARNING] Falha geral no teste de conectividade: {e}")
 
     def _create_ssl_context(self):
         """Cria contexto SSL adequado para Android"""

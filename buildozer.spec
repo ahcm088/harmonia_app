@@ -5,7 +5,7 @@ package.domain = org.harmonauta
 source.dir = .
 source.include_exts = py,kv,png,jpg,ttf
 version = 1.0
-requirements = python3,kivy==2.2.1,requests,typing_extensions,urllib3,pyopenssl,certifi,chardet,idna,charset-normalizer
+requirements = python3,kivy==2.2.1,requests,certifi
 orientation = portrait
 fullscreen = 1
 
